@@ -3,6 +3,7 @@ This is our project submission for a single-core soft CPU running Tomasulo's Alg
 
 # Status
 The project is under development, and this is only a skeleton.
+[![Updates](https://pyup.io/repos/github/SLongofono/Tomasulo-Softcore/shield.svg)](https://pyup.io/repos/github/SLongofono/Tomasulo-Softcore/)
 
 # Requirements
 The project assumes you are running a terminal with Python 3.6+ and execution privileges.
