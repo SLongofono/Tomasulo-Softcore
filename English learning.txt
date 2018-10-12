@@ -1,0 +1,88 @@
+﻿affine		仿射
+entropy		熵
+calculous	微积分
+functional	泛函
+rubric		说明
+fortitude       刚毅
+scuttle		疾走
+scuttle crab	迅捷蟹
+raptor		猛禽
+resilient	可恢复的
+patio		天井，院子
+reconnasissance	侦察
+denote		表示
+fraught		filled
+reciprocal	倒数
+indices		plural form of index
+counterintuitive 反常的
+scalar		标量
+respiratory	呼吸的
+tensor		张量
+Hispanic	西班牙裔的
+fluoresce	发荧光
+unleash		释放
+bootstrapping	自举的
+comprise of	contain
+preamble	前言
+resilient	能快速恢复的
+fallacy		谬误
+swimming trunks	泳裤
+DI water	去离子水
+occlude		阻塞
+arousal		觉醒，唤起
+exacerbate	恶化
+regime		政权
+dampen		抑制，减震
+stalk		偷偷接近，茎
+affiliate	子公司
+herculean	十分费力的
+sexual battery	性暴力
+sexual coercion	性胁迫
+sober		没有醉的，清醒的
+vigils		守夜
+genitals	外阴
+queer		伪娘
+squeeze		挤压
+spank		打屁股
+assailant	行凶者
+fend off	躲避
+dean		系主任
+demeanor	态度
+retaliate	打击报复
+diabetic	糖尿病患者
+over-the-hill	上年纪的
+gait		步态
+ambient		周遭
+perpendicular	垂直的
+generalization	泛化
+gesture		/dg/
+municipal	市政的
+petition	请求，请愿
+abdomen		腹部
+apnea		呼吸暂停
+nasal		鼻子的
+gyroscope	陀螺仪
+Seattle		西雅图
+thumbtack	图钉
+iris		光圈
+lateral		侧面的
+overt		显性的
+covert		隐性的
+acuity		敏锐度
+antithetical	对立的
+amenities	便利设施
+discrepancy	分歧
+eyelash		睫毛
+prosthesis	假体，义肢
+feline		猫科
+fluorescent	荧光
+beacon		灯塔
+incumbent	现任的
+augment		增强
+staple		装订
+meticulous	小心谨慎的
+corneal 	角膜
+taxonomy	分类学
+manifold	多支管
+
+
