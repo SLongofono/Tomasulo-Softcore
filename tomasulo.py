@@ -13,20 +13,22 @@ class Tomasulo:
     Usage:
     myTomasuloObject = Tomasulo(myInputFileName)
     """
-    
+
     def __init__(self, inputFileName):
         print("Initialization")
         try:
             from lib.helpers import getParameters
-            
+
             # Validate input and parse instance parameters
             self.Params = getParameters(inputFileName)
+
+            print(self.Params)
 
             # Instantiate Instruction Queue
             # Instantiate ROB, RS, RAT, ARF
             # Instantiate FUs
             # Instatiate Memory
-      
+
         except FileNotFoundError:
             print("ERROR: Invalid filename, please check the filename and path")
             x.close()
