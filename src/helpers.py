@@ -49,7 +49,6 @@ def getParameters(inputFileName):
                 # Case register file initialization inputs
                 for entry in data:
                     temp = entry.split('=')
-                    print(temp)
                     if temp[0][0].upper() == 'R':
                         regFileInitData.append( (temp[0].upper(),int(temp[1])) )
                     else:

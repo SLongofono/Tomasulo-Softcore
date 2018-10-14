@@ -17,7 +17,7 @@ class Tomasulo:
     def __init__(self, inputFileName):
         print("Initialization")
         try:
-            from lib.helpers import getParameters
+            from src.helpers import getParameters
 
             # Validate input and parse instance parameters
             self.Params = getParameters(inputFileName)
