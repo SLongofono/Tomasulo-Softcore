@@ -31,7 +31,6 @@ class Tomasulo:
 
         except FileNotFoundError:
             print("ERROR: Invalid filename, please check the filename and path")
-            x.close()
             return None
 
 
@@ -62,7 +61,6 @@ class Tomasulo:
 
 if __name__ == "__main__":
     import sys
-    import os
     if len(sys.argv) < 2:
         print("No imput file provided!")
         Tomasulo.usage()
