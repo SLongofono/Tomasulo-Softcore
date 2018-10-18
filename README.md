@@ -21,10 +21,10 @@ To test individual modules in the src directory, run them directly as scripts:
 - [x] Input Parsing
 - [x] ROB class
 - [ ] RS class
-- [ ] Integer ALU class
+- [x] Integer ALU class
 - [ ] FP Adder class
 - [ ] FP Multiplier class
-- [ ] Instruction Queue class
+- [x] Instruction Queue class
 - [ ] Branch Unit class
 - [ ] Memory Unit class
 
