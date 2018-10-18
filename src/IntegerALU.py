@@ -56,6 +56,10 @@ class IntegerALU:
             self.result = int(a + b)
         elif "SUB" == op:
             self.result = int(a - b)
+        elif "BNE" == op:
+            self.result = (a!=b)
+        elif "BEQ" == op:
+            self.result = (a==b)
         else:
             raise ValueError(f"Unknown operation [ {op} ] in integer ALU, time [ {self.time} ]")
 
