@@ -1,4 +1,4 @@
-python_version > '3.5'
+Tomasulo-Softcore==1.0.0; python_version > '3.5'
 pylint3
 graphviz
 
