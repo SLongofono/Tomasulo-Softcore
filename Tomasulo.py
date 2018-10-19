@@ -2,6 +2,7 @@
 # @authors:         Stephen, Yihao
 
 from src.IntegerALU import IntegerALU
+from src.ReservationStation import ReservationStation
 
 class Tomasulo:
     """
@@ -28,6 +29,7 @@ class Tomasulo:
 
             # Instantiate Instruction Queue
             # Instantiate ROB, RS, RAT, ARF
+            self.RS = ReservationStation(5)
             # Instantiate FUs
             self.ALUI = IntegerALU(1,1)
             # Instatiate Memory
@@ -70,3 +72,4 @@ if __name__ == "__main__":
         sys.exit(1)
     myTCore = Tomasulo(sys.argv[1])
     myTCore.ALUI.dump()
+    myTCore.RS.dump()
