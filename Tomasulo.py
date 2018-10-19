@@ -1,6 +1,8 @@
 # @file:            tomasulo.py
 # @authors:         Stephen, Yihao
 
+from src.IntegerALU import IntegerALU
+
 class Tomasulo:
     """
     This class implements the top-level object for the Tomasulo core.
@@ -27,6 +29,7 @@ class Tomasulo:
             # Instantiate Instruction Queue
             # Instantiate ROB, RS, RAT, ARF
             # Instantiate FUs
+            self.ALUI = IntegerALU(1,1)
             # Instatiate Memory
 
         except FileNotFoundError:
@@ -66,5 +69,4 @@ if __name__ == "__main__":
         Tomasulo.usage()
         sys.exit(1)
     myTCore = Tomasulo(sys.argv[1])
-
-
+    myTCore.ALUI.dump()
