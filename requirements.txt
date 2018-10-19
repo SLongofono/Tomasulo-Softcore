@@ -1,1 +1,4 @@
 python_version > 3.5
+pylint3
+graphviz
+
