@@ -4,6 +4,7 @@ This is our project submission for a single-core soft CPU running Tomasulo's Alg
 # Software Requirements
 The project assumes you are running a terminal with Python 3.6+ in the CLI path and execution privileges.
 [![Updates](https://pyup.io/repos/github/SLongofono/Tomasulo-Softcore/shield.svg)](https://pyup.io/repos/github/SLongofono/Tomasulo-Softcore/)
+To generate new UML images using the makeUML script, you will need graphviz and pylint3 installed and available in your path.
 
 # Build Instructions
 To run the project with a test input, type:
@@ -20,15 +21,18 @@ To test individual modules in the src directory, run them directly as scripts:
 ## Major Functional Units 
 - [x] Input Parsing
 - [x] ROB class
-- [ ] RS class
+- [x] RS class
 - [x] Integer ALU class
 - [ ] FP Adder class
 - [ ] FP Multiplier class
 - [x] Instruction Queue class
 - [ ] Branch Unit class
 - [ ] Memory Unit class
+- [ ] Integer Register File
+- [ ] FP Register File
 
 ## Test Cases
+- [ ] Simplest test case: execute a single ALU instruction end to end
 - [ ] Simple ISA test case: ALU
 - [ ] Simple ISA test case: FPALU
 - [ ] Simple ISA test case: FP Multiplier
