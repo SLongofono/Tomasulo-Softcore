@@ -46,7 +46,9 @@ To test individual modules in the src directory, run them directly as scripts:
 - [ ] Complex test case: write patterns to memory
 
 # Project Requirements
-[See here](../rubric.md)
+[See here](rubric.md)
 
 # Description of Operation
 The overview is here.
+
+![The class hierarchy UML of the Tomasulo-Softcore](UML/Hierarchy.png)
