@@ -60,6 +60,7 @@ class ROB():
 
         return foundMatch
 
+
     def add(self, entryID, destination):
         """
         Adds an entry to the ROB given an instruction ID and destination
@@ -68,7 +69,7 @@ class ROB():
         @param entryID An integer representing the instruction ID
         @param destination A string representing the destination register in
         the ARF
-        @return None
+        @return A string representing the name of the ROB entry created
 
         Raises IndexError exception if the ROB is considered full
 
@@ -77,15 +78,19 @@ class ROB():
             raise IndexError("The ROB is full!")
         else:
             self.q[self.tail] = [entryID, destination, None, False, False]
+            ret = f"ROB{self.tail}"
             self.tail += 1
             if self.tail == self.size:
                 self.tail = 0
+            return ret
+
 
     def canCommit(self):
         """
         Determines if the oldest instruction is complete and ready to commit
         """
         return self.q[self.head][DONEFLAG] and not self.q[self.head][STALE]
+
 
     def commit(self):
         """
@@ -134,9 +139,9 @@ if __name__ == "__main__":
     myRob = ROB(5)
     print(myRob.size)
     myRob.dump()
-    myRob.add(1, "R1")
-    myRob.add(2, "R2")
-    myRob.add(3, "R3")
+    print("Adding an entry into ", myRob.add(1, "R1"))
+    print("Adding an entry into ", myRob.add(2, "R2"))
+    print("Adding an entry into ", myRob.add(3, "R3"))
     myRob.dump()
     if myRob.isFull():
         raise Exception('WTF')
