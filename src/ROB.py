@@ -123,7 +123,7 @@ class ROB():
                 prefix = "tail------>"
             else:
                 prefix = "           "
-            print(prefix, self.q[i])
+            print(prefix, f"ROB{i}", self.q[i])
         print()
 
 # Test cases, run this script directly to execute
