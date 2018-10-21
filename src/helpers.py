@@ -15,9 +15,9 @@ def getParameters(inputFileName):
 
         inFile.readline()
         # Get mandatory inputs
-        params['IntegerAdder'] = inFile.readline().split()[2:]
-        params['FPAdder'] = inFile.readline().split()[2:]
-        params['FPMultiplier'] = inFile.readline().split()[2:]
+        params['ALUI'] = inFile.readline().split()[2:]
+        params['ALUFP'] = inFile.readline().split()[2:]
+        params['MULTFP'] = inFile.readline().split()[2:]
         params['LoadStoreUnit'] = inFile.readline().split()[2:]
         params['ROBEntries'] = inFile.readline().split()[3]
         params['CDBBufferEntries'] = inFile.readline().split()[4]
