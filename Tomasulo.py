@@ -1,9 +1,13 @@
-# @file:            tomasulo.py
+# @file:            Tomasulo.py
 # @authors:         Stephen, Yihao
 
 from src.IntegerALU import IntegerALU
 from src.ReservationStation import ReservationStation
 from src.InstructionQueue import InstructionQueue
+from src.ROB import ROB
+from src.BranchUnit import BranchUnit
+from src.MemoryUnit import MemoryUnit
+
 class Tomasulo:
     """
     This class implements the top-level object for the Tomasulo core.
@@ -31,6 +35,7 @@ class Tomasulo:
             self.IQ = InstructionQueue(self.Params["Instructions"])
 
             # Instantiate ROB, RAT, ARF
+            self.ROB = ROB(self.Params["ROBEntries"])
 
             # Instantiate RS for each type of FU
             self.RS_ALUIs = [ReservationStation(self.Params["ALUI"][0]) for i in range(self.Params["ALUI"][-1])]
@@ -46,8 +51,10 @@ class Tomasulo:
             self.MULTFPs = []
 
             # Instatiate Memory
+            self.memory = MemoryUnit()
 
             # Instantiate Branch Unit
+            self.branch = BranchUnit()
 
             # Track retired instruction count globally
             self.numRetiredInstructions = 0
@@ -143,3 +150,4 @@ if __name__ == "__main__":
         Tomasulo.usage()
         sys.exit(1)
     myCore = Tomasulo(sys.argv[1])
+    myCore.dump()
