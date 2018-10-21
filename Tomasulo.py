@@ -115,7 +115,43 @@ class Tomasulo:
         # TODO dump memory
 
     def issueStage(self):
-        pass
+        if not self.IQ.empty():
+            if not self.ROB.isFull():
+                # Peek at PC
+                nextInst = self.IQ.q[self.IQ.next][0]
+
+                # Check that at least one RS is not full
+                if (nextInst == "LD") or (nextInst == "SD"):
+                    idx = self.findIdleRS([self.memory.q])
+                    if idx >= 0:
+                        nextInst = self.IQ.fetch()
+
+                elif (nextInst == "ADD.D") or (nextInst == "SUB.D"):
+                    idx = self.findIdleRS(self.ALUFPs)
+                    if idx >= 0:
+                        nextInst = self.IQ.fetch()
+
+                elif (nextInst == "MULT.D"):
+                    idx = self.findIdleRS(self.MULTFPs)
+                    if idx >= 0:
+                        nextInst = self.IQ.fetch()
+
+                else:
+                    idx = self.findIdleRS(self.ALUIs)
+                    if idx >= 0:
+                        nextInst = self.IQ.fetch()
+
+
+                # Fetch instruction
+                # Update operands per the RAT
+                # Add the entry to the ROB
+                # Add the entry to the RS
+
+    def findIdleRS(self, FUList):
+        for idx, FU in enumerate(FUList):
+            if not FU.busy():
+                return idx
+        return -1
 
     def executeStage(self):
         pass
