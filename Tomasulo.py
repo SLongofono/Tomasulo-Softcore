@@ -1,12 +1,15 @@
 # @file:            Tomasulo.py
 # @authors:         Stephen, Yihao
 
+# Subclasses
 from src.IntegerALU import IntegerALU
 from src.ReservationStation import ReservationStation
 from src.InstructionQueue import InstructionQueue
 from src.ROB import ROB
 from src.BranchUnit import BranchUnit
 from src.MemoryUnit import MemoryUnit
+from src.RAT import RAT
+from src.ARF import ARF
 
 class Tomasulo:
     """
@@ -36,8 +39,8 @@ class Tomasulo:
 
             # Instantiate ROB, RAT, ARF
             self.ROB = ROB(self.Params["ROBEntries"])
-            self.ARF = None
-            self.RAT = None
+            self.ARF = ARF(initVals = self.Params["RegFileInitData"] if len(self.Params["RegFileInitData"])>0 else None)
+            self.RAT = RAT()
 
             # Instantiate RS for each type of FU with the specific size
             self.RS_ALUIs = ReservationStation(self.Params["ALUI"][0])
@@ -114,9 +117,8 @@ class Tomasulo:
             FU.dump()
 
         self.ROB.dump()
-
-        # TODO dump ARF
-        # TODO dump RAT
+        self.ARF.dump()
+        self.RAT.dump()
         # TODO dump memory
 
     def issueStage(self):
@@ -165,12 +167,12 @@ class Tomasulo:
 
                 # Check if operands are ready now and update
                 if mapping[1] == nextInst[1][1]:
-                    entry[4] = self.ARF.get([mapping[1])
+                    entry[4] = self.ARF.get(mapping[1])
                 else:
                     entry[2] = mapping[1]
 
                 if mapping[2] == nextInst[1][2]:
-                    entry[5] = self.ARF.get([mapping[2])
+                    entry[5] = self.ARF.get(mapping[2])
                 else:
                     entry[3] = mapping[2]
 
