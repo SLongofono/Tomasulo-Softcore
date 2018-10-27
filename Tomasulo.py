@@ -36,9 +36,14 @@ class Tomasulo:
 
             # Instantiate ROB, RAT, ARF
             self.ROB = ROB(self.Params["ROBEntries"])
+            self.ARF = None
+            self.RAT = None
 
-            # Instantiate RS for each type of FU
-            self.RS_ALUIs = [ReservationStation(self.Params["ALUI"][0]) for i in range(self.Params["ALUI"][-1])]
+            # Instantiate RS for each type of FU with the specific size
+            self.RS_ALUIs = ReservationStation(self.Params["ALUI"][0])
+            self.RS_ALUFPs = ReservationStation(self.Params["ALUFP"][0])
+            self.RS_MULTFPs = ReservationStation(self.Params["MULTFP"][0])
+
 
             # Instantiate FUs
             # Integer ALUs
@@ -115,43 +120,68 @@ class Tomasulo:
         # TODO dump memory
 
     def issueStage(self):
+        """
+        Attempts to issue the next instruction in the Instruction Queue
+        """
         if not self.IQ.empty():
             if not self.ROB.isFull():
                 # Peek at PC
-                nextInst = self.IQ.q[self.IQ.next][0]
+                nextName = self.IQ.q[self.IQ.next][0]
 
-                # Check that at least one RS is not full
-                if (nextInst == "LD") or (nextInst == "SD"):
-                    idx = self.findIdleRS([self.memory.q])
-                    if idx >= 0:
+                # Check that the relevant RS is not full
+                # Fetch actual instruction
+                if (nextName == "LD") or (nextName == "SD"):
+                    if not self.memory.q.isFull():
                         nextInst = self.IQ.fetch()
+                        # TODO Add in memory-specific issue handling here
+                    return
 
-                elif (nextInst == "ADD.D") or (nextInst == "SUB.D"):
-                    idx = self.findIdleRS(self.ALUFPs)
-                    if idx >= 0:
+                elif (nextName == "ADD.D") or (nextName == "SUB.D"):
+                    if not self.RS_ALUFPs.isFull():
                         nextInst = self.IQ.fetch()
+                    else:
+                        return
 
-                elif (nextInst == "MULT.D"):
-                    idx = self.findIdleRS(self.MULTFPs)
-                    if idx >= 0:
+                elif (nextName == "MULT.D"):
+                    if not self.RS_MULTFPs.isFull():
                         nextInst = self.IQ.fetch()
+                    else:
+                        return
 
                 else:
-                    idx = self.findIdleRS(self.ALUIs)
-                    if idx >= 0:
+                    if not self.RS_ALUIs.isFull():
                         nextInst = self.IQ.fetch()
+                    else:
+                        return
 
-
-                # Fetch instruction
                 # Update operands per the RAT
-                # Add the entry to the ROB
-                # Add the entry to the RS
+                mapping = self.RAT.getMapping(nextInst[1])
 
-    def findIdleRS(self, FUList):
-        for idx, FU in enumerate(FUList):
-            if not FU.busy():
-                return idx
-        return -1
+                # Add the entry to the ROB
+                ROBId = self.ROB.add(nextInst[0],nextInst[1][1])
+
+                # Prepare an entry for the RS
+                entry = [nextInst[0], nextInst[1][0], None, None, None, None]
+
+                # Check if operands are ready now and update
+                if mapping[1] == nextInst[1][1]:
+                    entry[4] = self.ARF.get([mapping[1])
+                else:
+                    entry[2] = mapping[1]
+
+                if mapping[2] == nextInst[1][2]:
+                    entry[5] = self.ARF.get([mapping[2])
+                else:
+                    entry[3] = mapping[2]
+
+                # Add the entry to the RS
+                if(mapping[0] == "ADD.D"):
+                    self.RS_ALUFPs.add(entry)
+                elif(mapping[0] == "MULT.D"):
+                    self.RS_MULTFPs.add(entry)
+                else:
+                    self.RS_ALUIs[idx].add(entry)
+
 
     def executeStage(self):
         pass
