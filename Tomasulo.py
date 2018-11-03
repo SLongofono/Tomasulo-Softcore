@@ -32,11 +32,17 @@ class Tomasulo:
 
             # Validate input and parse instance parameters
             self.Params = getParameters(inputFileName)
+            self.Params["InputFile"] = inputFileName
 
             print(self.Params)
 
-            # Instantiate Instruction Queue
+            # Track completion record for output
+            self.output = {}
+
+             # Instantiate Instruction Queue
             self.IQ = InstructionQueue(self.Params["Instructions"])
+            for i in range(len(self.Params["Instructions"])):
+                self.output[i] = [None, None, None, None, None]
 
             # Instantiate ROB, RAT, ARF
             self.ROB = ROB(self.Params["ROBEntries"])
@@ -68,7 +74,7 @@ class Tomasulo:
             # Track retired instruction count globally
             self.numRetiredInstructions = 0
 
-            # Track time as cycles
+           # Track time as cycles
             self.cycle = 0
 
         except FileNotFoundError:
@@ -102,6 +108,9 @@ class Tomasulo:
 
 
     def advanceTime(self):
+        """
+        Increment the wall time for the system clock and all helper classes
+        """
         self.cycle += 1
         for FU in self.ALUIs:
             FU.advanceTime()
@@ -109,6 +118,20 @@ class Tomasulo:
             FU.advanceTime()
         for FU in self.MULTFPs:
             FU.advanceTime()
+
+
+    def updateOutput(self, ID, stage):
+        """
+        Fills in the current time for the given instruction ID in the given
+        output stage
+
+        @param ID An integer representing the instruction to be updated
+        @param stage An integer representing the stage to be set to the current
+        cycle time
+        @return None
+        """
+        # We store Issue, execute, memory, writeback, commit
+        self.output[ID][stage] = self.cycle
 
 
     def dump(self):
@@ -123,6 +146,25 @@ class Tomasulo:
         self.ARF.dump()
         self.RAT.dump()
         # TODO dump memory
+
+
+    def writeOutput(self):
+        """
+        Write the output file of the results
+        """
+        fileName = self.Params["InputFile"]
+        fileName = fileName[:fileName.find('.')]
+        fileName = fileName + "_output.txt"
+
+        with open(fileName, 'w') as outFile:
+            # Write the instruction stage tracking
+            outFile.write("Instruction Completion Table".ljust(30,'=').rjust(80,'='))
+            outFile.write("\n\rID\t IS\t EX\t MEM\t WB\t COM\n\r")
+            for inst, stages in self.output.iteritems():
+                outfile.write(f"{inst}\t {stages[0]}\t {stages[1]}\t {stages[2]}\t {stages[3]}\t {stages[4]}\n\r")
+
+            # Write the register file
+            # write the nonzero sections of memory
 
 
     def issueStage(self):
@@ -188,6 +230,9 @@ class Tomasulo:
                 else:
                     self.RS_ALUIs[idx].add(entry)
 
+                # Log the issue in the output dictionary
+                self.updateOutput(nextInst[0], 0)
+
 
     def executeStage(self):
         """
@@ -208,10 +253,11 @@ class Tomasulo:
             if curPos >= len(ready_ALUIs):
                 break
             if not FU.busy():
-                FU.execute( ready_ALUIs[curPos].q[1],
-                            ready_ALUIs[curPos].q[0],
+                FU.execute( ready_ALUIs[curPos].q[0],
+                            ready_ALUIs[curPos].q[1],
                             ready_ALUIs[curPos].q[4],
                             ready_ALUIs[curPos].q[5])
+                self.updateOutput(ready_ALUIs[curPos].q[0], 1)
                 curPos += 1
 
         print("Trying to execute ALUFP instructions...")
@@ -220,10 +266,11 @@ class Tomasulo:
             if curPos >= len(ready_ALUFPs):
                 break
             if not FU.busy():
-                FU.execute( ready_ALUFPs[curPos].q[1],
-                            ready_ALUFPs[curPos].q[0],
+                FU.execute( ready_ALUFPs[curPos].q[0],
+                            ready_ALUFPs[curPos].q[1],
                             ready_ALUFPs[curPos].q[4],
                             ready_ALUFPs[curPos].q[5])
+                self.updateOutput(ready_ALUFPs[curPos].q[0], 1)
                 curPos += 1
 
         print("Trying to execute MULTFP instructions...")
@@ -232,10 +279,11 @@ class Tomasulo:
             if curPos >= len(ready_MULTFPs):
                 break
             if not FU.busy():
-                FU.execute( ready_MULTFPs[curPos].q[1],
-                            ready_MULTFPs[curPos].q[0],
+                FU.execute( ready_MULTFPs[curPos].q[0],
+                            ready_MULTFPs[curPos].q[1],
                             ready_MULTFPs[curPos].q[4],
                             ready_MULTFPs[curPos].q[5])
+                self.updateOutput(ready_MULTFPs[curPos].q[0], 1)
                 curPos += 1
 
 
@@ -246,6 +294,7 @@ class Tomasulo:
         """
         pass
 
+
     def writebackStage(self):
         """
         Check functional units for ready results, and pick one to write back.
@@ -255,10 +304,12 @@ class Tomasulo:
         """
         pass
 
+
     def commitStage(self):
         # Check if the ROB head is ready, and if so grab the result
         if self.ROB.canCommit():
             result = self.ROB.commit()
+            self.updateOutput(result[0], 4)
 
             # Check if the RAT needs to be cleared
             # Update the ARF with the result
