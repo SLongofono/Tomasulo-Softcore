@@ -102,15 +102,17 @@ class Tomasulo:
 
             # Try to write back FU results
             self.writebackStage()
+            print(self.output)
 
             # Try to commit
             self.commitStage()
+            print(self.output)
 
             # Advance time
             self.advanceTime()
 
             # Log state
-            self.dump()
+            #self.dump()
 
             if(self.cycle == 4):
                 break
@@ -236,6 +238,10 @@ class Tomasulo:
                         return
 
                 # Update operands per the RAT
+                # nextInst  [0, ('ADD', 'R1', 'R2', 'R3')]
+                # Mapping ('ADD', 'R1', 'R2', 'R3')
+
+                #
                 print(nextInst)
                 mapping = self.RAT.getMapping(nextInst[1])
                 print("Mapping: ", mapping)
@@ -247,15 +253,15 @@ class Tomasulo:
                 entry = [nextInst[0], nextInst[1][0], None, None, None, None]
 
                 # Check if operands are ready now and update
-                if mapping[1] == nextInst[1][1]:
-                    entry[4] = self.ARF.get(mapping[1])
-                else:
-                    entry[2] = mapping[1]
-
                 if mapping[2] == nextInst[1][2]:
-                    entry[5] = self.ARF.get(mapping[2])
+                    entry[4] = self.ARF.get(mapping[2])
                 else:
-                    entry[3] = mapping[2]
+                    entry[2] = mapping[2]
+
+                if mapping[3] == nextInst[1][3]:
+                    entry[5] = self.ARF.get(mapping[3])
+                else:
+                    entry[3] = mapping[3]
 
                 # Add the entry to the RS
                 if(mapping[0] == "ADD.D"):
@@ -278,17 +284,20 @@ class Tomasulo:
         # Enumerate a list of ready instructions
         ready_ALUIs = [x for x in self.RS_ALUIs.q if ( (x[4] is not None) and
                                                        (x[5] is not None) and
+                                                       (not x[6]) and
                                                        (not self.isTooNew(x[0])))]
         ready_ALUFPs = [x for x in self.RS_ALUFPs.q if ( (x[4] is not None) and
                                                          (x[5] is not None) and
+                                                         (not x[6]) and
                                                          (not self.isTooNew(x[0])))]
         ready_MULTFPs = [x for x in self.RS_MULTFPs.q if ( (x[4] is not None) and
                                                            (x[5] is not None) and
+                                                           (not x[6]) and
                                                            (not self.isTooNew(x[0])))]
-        #ready_LoadStore = []
+        #TODO ready_LoadStore = []
 
         # Mark executed instructions for cleanup
-        toRemove = []
+        markAsExecuting = []
 
         # Attempt to issue each instruction on an available unit
         print("Trying to execute ALUI instructions...")
@@ -302,7 +311,7 @@ class Tomasulo:
                             ready_ALUIs[curPos][4],
                             ready_ALUIs[curPos][5])
                 self.updateOutput(ready_ALUIs[curPos][0], 1)
-                toRemove.append(ready_ALUIs[curPos][0])
+                markAsExecuting.append(ready_ALUIs[curPos][0])
                 curPos += 1
 
         # TODO uncomment once these classes are done
@@ -317,7 +326,7 @@ class Tomasulo:
         #                    ready_ALUFPs[curPos].q[4],
         #                    ready_ALUFPs[curPos].q[5])
         #        self.updateOutput(ready_ALUFPs[curPos].q[0], 1)
-        #        toRemove.append(ready_ALUIs[curPos][0])
+        #        markAsExecuting.append(ready_ALUIs[curPos][0])
         #        curPos += 1
 
         # TODO uncomment once these classes are done
@@ -332,15 +341,15 @@ class Tomasulo:
         #                    ready_MULTFPs[curPos].q[4],
         #                    ready_MULTFPs[curPos].q[5])
         #        self.updateOutput(ready_MULTFPs[curPos].q[0], 1)
-        #        toRemove.append(ready_ALUIs[curPos][0])
+        #        markAsExecuting.append(ready_ALUIs[curPos][0])
         #        curPos += 1
 
-        for item in toRemove:
+        for item in markAsExecuting:
             # Don't check, just blindly call since IDs are unique
-            self.RS_ALUIs.remove(item)
+            self.RS_ALUIs.markAsExecuting(item)
             # TODO uncomment once these classes are done
-            #self.RS_ALUFPs.remove(item)
-            #self.RS_MULTFP.remove(item)
+            #self.RS_ALUFPs.markAsExecuting(item)
+            #self.RS_MULTFP.markAsExecuting(item)
 
 
     def memoryStage(self):
@@ -390,14 +399,28 @@ class Tomasulo:
 
     def commitStage(self):
         # Check if the ROB head is ready, and if so grab the result
-        if self.ROB.canCommit():
-            result = self.ROB.commit()
-            self.updateOutput(result[0], 4)
+        resultID = self.ROB.canCommit()
+        if resultID is not None:
+            # Verify that we didn't write back this cycle
+            if not self.isTooNew(resultID):
 
-            # Check if the RAT needs to be cleared
-            # Update the ARF with the result
-            # Retire the instruction
-            self.numRetiredInstructions += 1
+                # Reference ID, destination, value, doneflag, ROB#
+                result = self.ROB.commit()
+
+                # Check if the RAT should be updated
+                if(self.RAT.get(result[1]) == result[4]):
+                    self.RAT.set(result[1], result[1])
+
+                # Update ARF
+                self.ARF.set(result[1], result[2])
+
+                # TODO issue store if necessary
+
+                # Retire the instruction
+                self.numRetiredInstructions += 1
+
+                # Update commit cycle
+                self.updateOutput(resultID, 4)
 
 
     def usage():

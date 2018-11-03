@@ -90,8 +90,13 @@ class ROB():
     def canCommit(self):
         """
         Determines if the oldest instruction is complete and ready to commit
+
+        @return The ID of the oldest instruction, or None if it is not ready
         """
-        return self.q[self.head][DONEFLAG] and self.head != self.tail
+        if self.q[self.head][DONEFLAG] and self.head != self.tail:
+            return self.q[self.head][ID]
+
+        return None
 
 
     def commit(self):
@@ -99,15 +104,16 @@ class ROB():
         Retrieve the head of the ROB and advance the head beyond it.
 
         @return A copy of the ROB entry as a tuple: (ID, destination, value,
-        doneflag)
+        doneflag, ROB#)
         """
-        retVal = self.q[self.head].copy()
+        retVal = list(self.q[self.head].copy())
+        retVal.append(self.head)
 
         self.head += 1
         if self.head == self.size:
             self.head = 0
 
-        return retVal
+        return tuple(retVal)
 
 
     def dump(self):

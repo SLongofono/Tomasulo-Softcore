@@ -8,6 +8,7 @@ TAG_I = 2
 TAG_J = 3
 VALUE_I = 4
 VALUE_J = 5
+EXECUTING = 6
 
 class ReservationStation:
     """
@@ -24,11 +25,13 @@ class ReservationStation:
         self.size = size
         self.q = []
 
+
     def isFull(self):
         """
         Getter to determine if the RS can accept new entries
         """
         return len(self.q) == self.size
+
 
     def add(self, instructionID, op, Qi, Qj, Vi, Vj):
         """
@@ -48,8 +51,26 @@ class ReservationStation:
         We use the convention that unknown parameters are passed as None.
         Note that it is assumed that exactly one of Qi, Vi is None and exactly
         one of Qj, Vj is None at any given time.
+
+        Note also that since we do not wish to track which of the many FUs may
+        be executing any given instruction, we include a flag at the end to
+        designate those that are being executed.
         """
-        self.q.append( [instructionID, op, Qi, Qj, Vi, Vj] )
+        self.q.append( [instructionID, op, Qi, Qj, Vi, Vj, False] )
+
+
+    def markAsExecuting(self, instructionID):
+        """
+        Marks the instruction with the given ID as executing so that it is not
+        erroneously executed again.
+
+        @param instructionID An integer representing the instruction which
+        should be marked as executing
+        """
+        for entry in self.q:
+            if entry[ID] == instructionID:
+                entry[EXECUTING] = True
+
 
     def remove(self, instructionID):
         """
@@ -62,6 +83,7 @@ class ReservationStation:
                 self.q.pop(i)
                 return True
         return False
+
 
     def update(self, tag, value):
         """
@@ -83,6 +105,7 @@ class ReservationStation:
             if entry[TAG_J] == tag:
                 entry[TAG_J] = None
                 entry[VALUE_J] = value
+
 
     def dump(self):
         """
