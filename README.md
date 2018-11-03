@@ -24,24 +24,24 @@ To test individual modules in the src directory, run them directly as scripts:
 - [x] Input Parsing
 - [x] ROB class
 - [x] RS class
-- [ ] RAT class
+- [x] RAT class
 - [x] Integer ALU class
-- [ ] FP Adder class
+- [x] FP Adder class
 - [ ] FP Multiplier class
 - [x] Instruction Queue class
 - [ ] Branch Unit class
 - [ ] Memory Unit class
-- [ ] Integer Register File
-- [ ] FP Register File
-- [ ] Output Generator
-- [ ] Issue procedure
-- [ ] Execute procedure
-- [ ] Memory procedure
-- [ ] Writeback procedure
+- [x] Integer Register File
+- [x] FP Register File
+- [x] Output Generator
+- [x] Issue procedure
+- [x] Execute procedure
+- [x] Memory procedure
+- [x] Writeback procedure
 - [ ] Commit procedure
 
 ## Test Cases
-- [ ] Simplest test case: execute a single ALU instruction end-to-end
+- [x] Simplest test case: execute a single ALU instruction end-to-end
 - [ ] Simple ISA test case: ALU end-to-end
 - [ ] Simple ISA test case: FPALU end-to-end
 - [ ] Simple ISA test case: FP Multiplier end-to-end
