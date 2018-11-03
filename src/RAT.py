@@ -16,12 +16,17 @@ class RAT():
         self.names.extend([f"F{x}" for x in range(32)])
         self.reg = dict(zip(self.names, self.names))
 
+
     def getMapping(self, inst):
         """
         Given an instruction tuple, returns a tuple with the current mappings
         for each operand in the RAT
         """
-        return (inst[0], self.reg[inst[1]], self.reg[inst[2]])
+        ret = list(inst)
+        ret[2] = self.reg[ret[2]]
+        ret[3] = self.reg[ret[3]]
+        return tuple(ret)
+
 
     def get(self, key):
         """
@@ -33,6 +38,7 @@ class RAT():
         """
         return self.reg[key]
 
+
     def set(self, key, value):
         """
         Setter for a register mapping
@@ -43,6 +49,7 @@ class RAT():
         """
         self.reg[key] = value
 
+
     def dump(self):
         """
         Pretty-prints the RAT contents
@@ -51,6 +58,7 @@ class RAT():
         keys = self.names
         for i in range(0, len(keys), 4):
             print(f"{keys[i]}:\t{self.reg[keys[i]]}\t\t{keys[i+1]}:\t{self.reg[keys[i+1]]}\t\t{keys[i+2]}:\t{self.reg[keys[i+2]]}\t\t{keys[i+3]}:\t{self.reg[keys[i+3]]}")
+
 
 if __name__ == "__main__":
     myRAT = RAT()

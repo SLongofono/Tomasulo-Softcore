@@ -31,7 +31,7 @@ class InstructionQueue:
         """
         temp = self.next + offset
         self.next += (1 + offset)
-        return tuple(self.instructions[temp])
+        return [temp, self.instructions[temp] ]
 
 
     def empty(self):

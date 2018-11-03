@@ -59,10 +59,10 @@ class Tomasulo:
             # Integer ALUs
             self.ALUIs = [IntegerALU(1,1) for i in range(self.Params["ALUI"][-1])]
 
-            # FP ALUs
+            # FP ALUs TODO
             self.ALUFPs = []
 
-            # FP Multipliers
+            # FP Multipliers TODO
             self.MULTFPs = []
 
             # Instatiate Memory
@@ -83,13 +83,19 @@ class Tomasulo:
 
 
     def runSimulation(self):
+        """
+        Begins the simulation defined by the input file provided at instantiation
+        """
+        print("Beginning Simulation")
 
-        while self.numRetiredInstructions < len(self.Params["instructions"]):
+        while self.numRetiredInstructions < len(self.Params["Instructions"]):
             # Try to issue new instructions
             self.issueStage()
+            print(self.output)
 
             # Try to execute ready instructions
             self.executeStage()
+            print(self.output)
 
             # Try to write back load results
             self.memoryStage()
@@ -105,6 +111,12 @@ class Tomasulo:
 
             # Log state
             self.dump()
+
+            if(self.cycle == 4):
+                break
+        self.writeOutput()
+
+        print("Simulation Complete")
 
 
     def advanceTime(self):
@@ -158,13 +170,34 @@ class Tomasulo:
 
         with open(fileName, 'w') as outFile:
             # Write the instruction stage tracking
-            outFile.write("Instruction Completion Table".ljust(30,'=').rjust(80,'='))
+            outFile.write("Instruction Completion Table".ljust(35,'=').rjust(80,'='))
             outFile.write("\n\rID\t IS\t EX\t MEM\t WB\t COM\n\r")
-            for inst, stages in self.output.iteritems():
-                outfile.write(f"{inst}\t {stages[0]}\t {stages[1]}\t {stages[2]}\t {stages[3]}\t {stages[4]}\n\r")
+            for inst, stages in self.output.items():
+                outFile.write(f"{inst}\t {stages[0]}\t {stages[1]}\t {stages[2]}\t {stages[3]}\t {stages[4]}\n\r")
 
             # Write the register file
             # write the nonzero sections of memory
+
+
+    def isTooNew(self, ID):
+        """
+        Checks if the given instruction has just reached a new stage.
+
+        @param ID An integer representing the instruction ID to check
+        @return True if the instruction reached its last non-None stage in
+        this cycle, False otherwise.
+
+        This is used to prevent an instruction from executing in the same stage
+        in which it was issued.
+        """
+        # find most recent stage
+        stage = 0
+        for s in self.output[ID]:
+            if s is not None:
+                stage = s
+            else:
+                break
+        return stage == self.cycle
 
 
     def issueStage(self):
@@ -174,7 +207,7 @@ class Tomasulo:
         if not self.IQ.empty():
             if not self.ROB.isFull():
                 # Peek at PC
-                nextName = self.IQ.q[self.IQ.next][0]
+                nextName = self.IQ.instructions[self.IQ.next][0]
 
                 # Check that the relevant RS is not full
                 # Fetch actual instruction
@@ -203,7 +236,9 @@ class Tomasulo:
                         return
 
                 # Update operands per the RAT
+                print(nextInst)
                 mapping = self.RAT.getMapping(nextInst[1])
+                print("Mapping: ", mapping)
 
                 # Add the entry to the ROB
                 ROBId = self.ROB.add(nextInst[0],nextInst[1][1])
@@ -224,11 +259,11 @@ class Tomasulo:
 
                 # Add the entry to the RS
                 if(mapping[0] == "ADD.D"):
-                    self.RS_ALUFPs.add(entry)
+                    self.RS_ALUFPs.add(*entry)
                 elif(mapping[0] == "MULT.D"):
-                    self.RS_MULTFPs.add(entry)
+                    self.RS_MULTFPs.add(*entry)
                 else:
-                    self.RS_ALUIs[idx].add(entry)
+                    self.RS_ALUIs.add(*entry)
 
                 # Log the issue in the output dictionary
                 self.updateOutput(nextInst[0], 0)
@@ -241,10 +276,19 @@ class Tomasulo:
         """
 
         # Enumerate a list of ready instructions
-        ready_ALUIs = [x for x in self.RS_ALUIs.q if ((x[4] is not None) and (x[5] is not None))]
-        ready_ALUFPs = [x for x in self.RS_ALUFPs.q if ((x[4] is not None) and (x[5] is not None))]
-        ready_MULTFPs = [x for x in self.RS_MULTFPs.q if ((x[4] is not None) and (x[5] is not None))]
+        ready_ALUIs = [x for x in self.RS_ALUIs.q if ( (x[4] is not None) and
+                                                       (x[5] is not None) and
+                                                       (not self.isTooNew(x[0])))]
+        ready_ALUFPs = [x for x in self.RS_ALUFPs.q if ( (x[4] is not None) and
+                                                         (x[5] is not None) and
+                                                         (not self.isTooNew(x[0])))]
+        ready_MULTFPs = [x for x in self.RS_MULTFPs.q if ( (x[4] is not None) and
+                                                           (x[5] is not None) and
+                                                           (not self.isTooNew(x[0])))]
         #ready_LoadStore = []
+
+        # Mark executed instructions for cleanup
+        toRemove = []
 
         # Attempt to issue each instruction on an available unit
         print("Trying to execute ALUI instructions...")
@@ -253,38 +297,50 @@ class Tomasulo:
             if curPos >= len(ready_ALUIs):
                 break
             if not FU.busy():
-                FU.execute( ready_ALUIs[curPos].q[0],
-                            ready_ALUIs[curPos].q[1],
-                            ready_ALUIs[curPos].q[4],
-                            ready_ALUIs[curPos].q[5])
-                self.updateOutput(ready_ALUIs[curPos].q[0], 1)
+                FU.execute( ready_ALUIs[curPos][0],
+                            ready_ALUIs[curPos][1],
+                            ready_ALUIs[curPos][4],
+                            ready_ALUIs[curPos][5])
+                self.updateOutput(ready_ALUIs[curPos][0], 1)
+                toRemove.append(ready_ALUIs[curPos][0])
                 curPos += 1
 
-        print("Trying to execute ALUFP instructions...")
-        curPos = 0
-        for i, FU in enumerate(self.ALUFPs):
-            if curPos >= len(ready_ALUFPs):
-                break
-            if not FU.busy():
-                FU.execute( ready_ALUFPs[curPos].q[0],
-                            ready_ALUFPs[curPos].q[1],
-                            ready_ALUFPs[curPos].q[4],
-                            ready_ALUFPs[curPos].q[5])
-                self.updateOutput(ready_ALUFPs[curPos].q[0], 1)
-                curPos += 1
+        # TODO uncomment once these classes are done
+        #print("Trying to execute ALUFP instructions...")
+        #curPos = 0
+        #for i, FU in enumerate(self.ALUFPs):
+        #    if curPos >= len(ready_ALUFPs):
+        #        break
+        #    if not FU.busy():
+        #        FU.execute( ready_ALUFPs[curPos].q[0],
+        #                    ready_ALUFPs[curPos].q[1],
+        #                    ready_ALUFPs[curPos].q[4],
+        #                    ready_ALUFPs[curPos].q[5])
+        #        self.updateOutput(ready_ALUFPs[curPos].q[0], 1)
+        #        toRemove.append(ready_ALUIs[curPos][0])
+        #        curPos += 1
 
-        print("Trying to execute MULTFP instructions...")
-        curPos = 0
-        for i, FU in enumerate(self.MULTFPs):
-            if curPos >= len(ready_MULTFPs):
-                break
-            if not FU.busy():
-                FU.execute( ready_MULTFPs[curPos].q[0],
-                            ready_MULTFPs[curPos].q[1],
-                            ready_MULTFPs[curPos].q[4],
-                            ready_MULTFPs[curPos].q[5])
-                self.updateOutput(ready_MULTFPs[curPos].q[0], 1)
-                curPos += 1
+        # TODO uncomment once these classes are done
+        #print("Trying to execute MULTFP instructions...")
+        #curPos = 0
+        #for i, FU in enumerate(self.MULTFPs):
+        #    if curPos >= len(ready_MULTFPs):
+        #        break
+        #    if not FU.busy():
+        #        FU.execute( ready_MULTFPs[curPos].q[0],
+        #                    ready_MULTFPs[curPos].q[1],
+        #                    ready_MULTFPs[curPos].q[4],
+        #                    ready_MULTFPs[curPos].q[5])
+        #        self.updateOutput(ready_MULTFPs[curPos].q[0], 1)
+        #        toRemove.append(ready_ALUIs[curPos][0])
+        #        curPos += 1
+
+        for item in toRemove:
+            # Don't check, just blindly call since IDs are unique
+            self.RS_ALUIs.remove(item)
+            # TODO uncomment once these classes are done
+            #self.RS_ALUFPs.remove(item)
+            #self.RS_MULTFP.remove(item)
 
 
     def memoryStage(self):
