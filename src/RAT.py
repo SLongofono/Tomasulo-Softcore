@@ -1,0 +1,57 @@
+# @file         RAT.py
+# @author       Stephen
+
+class RAT():
+    """
+    Models a register allocation table for Tomasulo's Algorithm
+
+    This class exists to incorporate helper functions that make the code
+    simpler in upstream classes
+    """
+    def __init__(self):
+        """
+        Constructor for the RAT class
+        """
+        self.names = [f"R{x}" for x in range(32)]
+        self.names.extend([f"F{x}" for x in range(32)])
+        self.reg = dict(zip(self.names, self.names))
+
+    def getMapping(self, inst):
+        """
+        Given an instruction tuple, returns a tuple with the current mappings
+        for each operand in the RAT
+        """
+        return (inst[0], self.reg[inst[1]], self.reg[inst[2]])
+
+    def get(self, key):
+        """
+        Getter for the current mapping of the given register name key
+
+        @param key A string representing the name of the register mapping to
+        get
+        @return None
+        """
+        return self.reg[key]
+
+    def set(self, key, value):
+        """
+        Setter for a register mapping
+
+        @param key A string representing the name of the register mapping to update
+        @param value A string representing the name of the register to map to
+        @return None
+        """
+        self.reg[key] = value
+
+    def dump(self):
+        """
+        Pretty-prints the RAT contents
+        """
+        print("RAT".ljust(40, '=').rjust(80,'='))
+        keys = self.names
+        for i in range(0, len(keys), 4):
+            print(f"{keys[i]}:\t{self.reg[keys[i]]}\t\t{keys[i+1]}:\t{self.reg[keys[i+1]]}\t\t{keys[i+2]}:\t{self.reg[keys[i+2]]}\t\t{keys[i+3]}:\t{self.reg[keys[i+3]]}")
+
+if __name__ == "__main__":
+    myRAT = RAT()
+    myRAT.dump()

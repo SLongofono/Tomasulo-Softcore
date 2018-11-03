@@ -93,7 +93,7 @@ class IntegerALU:
         """
         Pretty-prints the state of the ALU
         """
-        print("Integer ALU".ljust(36, '=').rjust(80,'='))
+        print("Integer ALU".ljust(44, '=').rjust(80,'='))
         print(f"Time:\t\t\t{self.time}")
         print(f"Busy:\t\t\t{self.busy()}")
         print(f"Instruction:\t\t{self.activeInstruction}")
@@ -101,6 +101,7 @@ class IntegerALU:
         print("Output Buffer Contents:")
         for item in self.buffer:
             print(f"\tID:{item[0]}, Value:{item[1]}")
+        print()
 
 if __name__ == "__main__":
     t = 0

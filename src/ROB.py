@@ -6,7 +6,6 @@ ID = 0
 DEST = 1
 VALUE = 2
 DONEFLAG = 3
-STALE = 4
 
 class ROB():
     """
@@ -26,7 +25,7 @@ class ROB():
     def __init__(self,size):
         if size < 1:
             raise IndexError(f"ROB initialized with invalid size {size}")
-        self.q = [ [-1, "", None, False, True] for x in range(size)]
+        self.q = [ [-1, "", None, True] for x in range(size)]
         self.size = size
         self.head = 0
         self.tail = 0
@@ -36,9 +35,11 @@ class ROB():
         """
         Determines if the ROB is full.
 
-        In this case, full means that there are no stale entries in the buffer.
+        In this case, full means the head and tail both point to an instruction
+        which is not complete.
         """
-        return self.head == self.tail and not self.q[self.head][STALE]
+        return self.head == self.tail and not self.q[self.head][DONEFLAG]
+
 
     def findAndUpdateEntry(self, entryID, value):
         """
@@ -60,6 +61,7 @@ class ROB():
 
         return foundMatch
 
+
     def add(self, entryID, destination):
         """
         Adds an entry to the ROB given an instruction ID and destination
@@ -68,7 +70,7 @@ class ROB():
         @param entryID An integer representing the instruction ID
         @param destination A string representing the destination register in
         the ARF
-        @return None
+        @return A string representing the name of the ROB entry created
 
         Raises IndexError exception if the ROB is considered full
 
@@ -76,33 +78,36 @@ class ROB():
         if self.isFull():
             raise IndexError("The ROB is full!")
         else:
-            self.q[self.tail] = [entryID, destination, None, False, False]
+            self.q[self.tail] = [entryID, destination, None, False]
+            ret = f"ROB{self.tail}"
             self.tail += 1
             if self.tail == self.size:
                 self.tail = 0
+            return ret
+
 
     def canCommit(self):
         """
         Determines if the oldest instruction is complete and ready to commit
         """
-        return self.q[self.head][DONEFLAG] and not self.q[self.head][STALE]
+        return self.q[self.head][DONEFLAG] and self.head != self.tail
+
 
     def commit(self):
         """
         Retrieve the head of the ROB and advance the head beyond it.
 
-        @return True on success, False otherwise
+        @return A copy of the ROB entry as a tuple: (ID, destination, value,
+        doneflag)
         """
         retVal = self.q[self.head].copy()
 
-        # Note: we must mark the item as stale in case we are out of
-        # instructions to process
-        self.q[self.head][STALE] = True
         self.head += 1
         if self.head == self.size:
             self.head = 0
 
         return retVal
+
 
     def dump(self):
         """
@@ -118,7 +123,7 @@ class ROB():
                 prefix = "tail------>"
             else:
                 prefix = "           "
-            print(prefix, self.q[i])
+            print(prefix, f"ROB{i}", self.q[i])
         print()
 
 # Test cases, run this script directly to execute
@@ -134,9 +139,9 @@ if __name__ == "__main__":
     myRob = ROB(5)
     print(myRob.size)
     myRob.dump()
-    myRob.add(1, "R1")
-    myRob.add(2, "R2")
-    myRob.add(3, "R3")
+    print("Adding an entry into ", myRob.add(1, "R1"))
+    print("Adding an entry into ", myRob.add(2, "R2"))
+    print("Adding an entry into ", myRob.add(3, "R3"))
     myRob.dump()
     if myRob.isFull():
         raise Exception('WTF')
