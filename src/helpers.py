@@ -104,10 +104,11 @@ def parseInstructions(rawInstructions):
             results.append( (name, temp[0], temp[1], int(temp[2])) )
 
         else:                                               # case R type
-            idx = raw.find(' ')
-            name = raw[:idx]
-            temp = raw[idx:].strip().split(',')
-            results.append( (name, temp[0], temp[1], temp[2]) )
+            name = raw[:3]
+            temp = raw[3:].strip().split(',')
+            temp.insert(0, name)
+            print(temp)
+            results.append( tuple(temp) )
 
     return results
 

@@ -11,6 +11,7 @@ class IntegerALU:
     implies that this unit is non-pipelined.
     """
 
+
     def __init__(self, latency, bufferLen):
         """
         Constructor for the IntegerALU class
@@ -29,6 +30,7 @@ class IntegerALU:
         self.bufferLen = bufferLen
         self.buffer = []
 
+
     def busy(self):
         """
         Getter for the busy status of this IntegerALU
@@ -37,7 +39,8 @@ class IntegerALU:
         """
         return (self.time < self.nextFreeTime) and (len(self.buffer) < self.bufferLen)
 
-    def execute(self, op, ID, a, b):
+
+    def execute(self, ID, op, a, b):
         """
         Puts the ALU in an execute state and sets the next free time
 
@@ -63,11 +66,13 @@ class IntegerALU:
         else:
             raise ValueError(f"Unknown operation [ {op} ] in integer ALU, time [ {self.time} ]")
 
+
     def isResultReady(self):
         """
         Getter determines if a result is waiting to be written back
         """
         return len(self.buffer) > 0
+
 
     def getResult(self):
         """
@@ -76,6 +81,14 @@ class IntegerALU:
         @return A tuple with the instruction ID followed by the result
         """
         return self.buffer.pop(0)
+
+
+    def getResultID(self):
+        """
+        Getter for the ID of the head of the output buffer
+        """
+        return self.buffer[0][0]
+
 
     def advanceTime(self):
         """
@@ -88,6 +101,7 @@ class IntegerALU:
             self.buffer.append( (self.activeInstruction[0], self.result) )
             self.activeInstruction = None
             self.nextFreeTime = -1
+
 
     def dump(self):
         """
@@ -103,12 +117,13 @@ class IntegerALU:
             print(f"\tID:{item[0]}, Value:{item[1]}")
         print()
 
+
 if __name__ == "__main__":
     t = 0
     myALU = IntegerALU(2, 3)
     print(myALU.busy)
     myALU.dump()
-    myALU.execute("ADD", 33, -1, 51)
+    myALU.execute(33, "ADD", -1, 51)
     myALU.dump()
     myALU.advanceTime()
     myALU.dump()
@@ -134,7 +149,7 @@ if __name__ == "__main__":
             print(f"Time {i}: ALU busy")
         else:
             print(f"Time {i}: ALU idle")
-            myALU.execute("ADD", 100+i, 100, i)
+            myALU.execute(100+i, "ADD", 100, i)
         if myALU.isResultReady() and (0 == i % 4):
             print(f"Retrieved Result {myALU.getResult()}")
         myALU.advanceTime()
