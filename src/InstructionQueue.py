@@ -15,6 +15,7 @@ class InstructionQueue:
         """
         self.instructions = instructions
         self.next = 0
+        self.nextID = 0
 
     def fetch(self, offset=0):
         """
@@ -30,8 +31,10 @@ class InstructionQueue:
         to replicate that behavior.
         """
         temp = self.next + offset
+        temp2 = self.nextID
+        self.nextID += 1
         self.next += (1 + offset)
-        return [temp, self.instructions[temp] ]
+        return [ temp2, self.instructions[temp] ]
 
 
     def empty(self):

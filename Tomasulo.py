@@ -358,6 +358,33 @@ class Tomasulo:
         Any result written back will update reservations stations and ROB,
         potentially the ARF.
         """
+        # Check if there are results ready, track the oldest ID seen (the
+        # smallest ID number)
+        winningFU = None
+        oldestInst = 2**30
+        for FU in self.ALUIs:
+            if FU.isResultReady():
+                temp = FU.getResultID()
+                if temp < oldestInst:
+                    oldestInst = temp
+                    winningFU = FU
+
+        # TODO add in same check over the ALUFPs, MULTFPs
+
+        if winningFU is not None:
+            # Fetch Result
+            result = winningFU.getResult()
+
+            # Update ROB results
+            dest = self.ROB.findAndUpdateEntry(*result)
+
+            # Check if the ROB entry matches the RAT entry
+            if self.RAT.get(dest) == dest:
+                self.ARF.set(dest,result[1])
+
+            # Update writeback cycle
+            self.updateOutput(result[0], 3)
+
         pass
 
 

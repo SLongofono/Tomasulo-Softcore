@@ -1,4 +1,4 @@
 =============================================Instruction Completion Table=======
 ID	 IS	 EX	 MEM	 WB	 COM
-0	 0	 1	 None	 None	 None
+0	 0	 1	 None	 2	 2
 

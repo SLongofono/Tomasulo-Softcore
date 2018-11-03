@@ -48,18 +48,19 @@ class ROB():
 
         @param entryID An integer representing the instruction entry to find
         @param value An integer or floating point value to populate
-        @return True if found and successful, False otherwise
+        @return A string representing the destination address if found and
+        successful, None otherwise
         """
 
-        foundMatch = False
+        found = None
         for entry in self.q:
             if entry[ID] == entryID:
                 entry[VALUE] = value
                 entry[DONEFLAG] = True
-                foundMatch = True
+                found = entry[DEST]
                 break
 
-        return foundMatch
+        return found
 
 
     def add(self, entryID, destination):
