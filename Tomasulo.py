@@ -24,6 +24,7 @@ class Tomasulo:
     myTomasuloObject = Tomasulo(myInputFileName)
     """
 
+
     def __init__(self, inputFileName):
         print("Initialization")
         try:
@@ -99,6 +100,7 @@ class Tomasulo:
             # Log state
             self.dump()
 
+
     def advanceTime(self):
         self.cycle += 1
         for FU in self.ALUIs:
@@ -107,6 +109,7 @@ class Tomasulo:
             FU.advanceTime()
         for FU in self.MULTFPs:
             FU.advanceTime()
+
 
     def dump(self):
         for FU in self.ALUIs:
@@ -120,6 +123,7 @@ class Tomasulo:
         self.ARF.dump()
         self.RAT.dump()
         # TODO dump memory
+
 
     def issueStage(self):
         """
@@ -186,12 +190,69 @@ class Tomasulo:
 
 
     def executeStage(self):
-        pass
+        """
+        For each funcitonal unit, attempts to find an instruction which is
+        ready to execute
+        """
+
+        # Enumerate a list of ready instructions
+        ready_ALUIs = [x for x in self.RS_ALUIs.q if ((x[4] is not None) and (x[5] is not None))]
+        ready_ALUFPs = [x for x in self.RS_ALUFPs.q if ((x[4] is not None) and (x[5] is not None))]
+        ready_MULTFPs = [x for x in self.RS_MULTFPs.q if ((x[4] is not None) and (x[5] is not None))]
+        #ready_LoadStore = []
+
+        # Attempt to issue each instruction on an available unit
+        print("Trying to execute ALUI instructions...")
+        curPos = 0
+        for i, FU in enumerate(self.ALUIs):
+            if curPos >= len(ready_ALUIs):
+                break
+            if not FU.busy():
+                FU.execute( ready_ALUIs[curPos].q[1],
+                            ready_ALUIs[curPos].q[0],
+                            ready_ALUIs[curPos].q[4],
+                            ready_ALUIs[curPos].q[5])
+                curPos += 1
+
+        print("Trying to execute ALUFP instructions...")
+        curPos = 0
+        for i, FU in enumerate(self.ALUFPs):
+            if curPos >= len(ready_ALUFPs):
+                break
+            if not FU.busy():
+                FU.execute( ready_ALUFPs[curPos].q[1],
+                            ready_ALUFPs[curPos].q[0],
+                            ready_ALUFPs[curPos].q[4],
+                            ready_ALUFPs[curPos].q[5])
+                curPos += 1
+
+        print("Trying to execute MULTFP instructions...")
+        curPos = 0
+        for i, FU in enumerate(self.MULTFPs):
+            if curPos >= len(ready_MULTFPs):
+                break
+            if not FU.busy():
+                FU.execute( ready_MULTFPs[curPos].q[1],
+                            ready_MULTFPs[curPos].q[0],
+                            ready_MULTFPs[curPos].q[4],
+                            ready_MULTFPs[curPos].q[5])
+                curPos += 1
+
 
     def memoryStage(self):
+        """
+        Cues the memory module to perform any queued LD instructions and
+        update its output buffer
+        """
         pass
 
     def writebackStage(self):
+        """
+        Check functional units for ready results, and pick one to write back.
+
+        Any result written back will update reservations stations and ROB,
+        potentially the ARF.
+        """
         pass
 
     def commitStage(self):
@@ -204,9 +265,14 @@ class Tomasulo:
             # Retire the instruction
             self.numRetiredInstructions += 1
 
+
     def usage():
+        """
+        Simple helper to print usage information for the entry class
+        """
         print("\nUsage:")
         print("\n\t$ python3 Tomasulo.py <testFilePath>\n")
+
 
 # End Class Tomasulo
 
@@ -219,3 +285,4 @@ if __name__ == "__main__":
         sys.exit(1)
     myCore = Tomasulo(sys.argv[1])
     myCore.dump()
+    myCore.runSimulation()

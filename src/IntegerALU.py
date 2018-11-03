@@ -37,7 +37,7 @@ class IntegerALU:
         """
         return (self.time < self.nextFreeTime) and (len(self.buffer) < self.bufferLen)
 
-    def execute(self, op, ID, a, b):
+    def execute(self, ID, op, a, b):
         """
         Puts the ALU in an execute state and sets the next free time
 
@@ -108,7 +108,7 @@ if __name__ == "__main__":
     myALU = IntegerALU(2, 3)
     print(myALU.busy)
     myALU.dump()
-    myALU.execute("ADD", 33, -1, 51)
+    myALU.execute(33, "ADD", -1, 51)
     myALU.dump()
     myALU.advanceTime()
     myALU.dump()
@@ -134,7 +134,7 @@ if __name__ == "__main__":
             print(f"Time {i}: ALU busy")
         else:
             print(f"Time {i}: ALU idle")
-            myALU.execute("ADD", 100+i, 100, i)
+            myALU.execute(100+i, "ADD", 100, i)
         if myALU.isResultReady() and (0 == i % 4):
             print(f"Retrieved Result {myALU.getResult()}")
         myALU.advanceTime()
