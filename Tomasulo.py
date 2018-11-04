@@ -114,7 +114,7 @@ class Tomasulo:
             # Log state
             self.dump()
 
-            if(self.cycle == 4):
+            if(self.cycle == 5):
                 break
         self.writeOutput()
 

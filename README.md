@@ -42,7 +42,7 @@ To test individual modules in the src directory, run them directly as scripts:
 
 ## Test Cases
 - [x] Simplest test case: execute a single ALU instruction end-to-end
-- [ ] Simple ISA test case: ALU end-to-end
+- [x] Simple ISA test case: ALU end-to-end
 - [ ] Simple ISA test case: FPALU end-to-end
 - [ ] Simple ISA test case: FP Multiplier end-to-end
 - [ ] Simple ISA test case: Load/Store end-to-end
