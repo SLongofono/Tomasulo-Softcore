@@ -112,7 +112,7 @@ class Tomasulo:
             self.advanceTime()
 
             # Log state
-            #self.dump()
+            self.dump()
 
             if(self.cycle == 4):
                 break
@@ -172,12 +172,25 @@ class Tomasulo:
 
         with open(fileName, 'w') as outFile:
             # Write the instruction stage tracking
-            outFile.write("Instruction Completion Table".ljust(35,'=').rjust(80,'='))
-            outFile.write("\n\rID\t IS\t EX\t MEM\t WB\t COM\n\r")
+            outFile.write("Instruction Completion Table".ljust(50,'=').rjust(80,'='))
+            outFile.write("\n\rID\t| IS\t\t EX\t\t MEM\t\t WB\t\t COM\n\r")
             for inst, stages in self.output.items():
-                outFile.write(f"{inst}\t {stages[0]}\t {stages[1]}\t {stages[2]}\t {stages[3]}\t {stages[4]}\n\r")
+                outFile.write(f"{inst}\t| {stages[0]}\t\t {stages[1]}\t\t {stages[2]}\t\t {stages[3]}\t\t {stages[4]}\n\r")
+            outFile.write("\n\r")
 
             # Write the register file
+            outFile.write("Integer ARF".ljust(43, '=').rjust(80,'='))
+            keys = [f"R{x}" for x in range(32)]
+            for i in range(0,len(keys),2):
+                outFile.write(f"\n\r{keys[i]}:\t{self.ARF.get(keys[i])}\t\t\t\t{keys[i+1]}:\t{self.ARF.get(keys[i+1])}")
+            outFile.write("\n\r\n\r")
+
+            outFile.write("Floating Point ARF".ljust(46, '=').rjust(80,'='))
+            keys = [f"F{x}" for x in range(32)]
+            for i in range(0, len(keys),2):
+                outFile.write(f"\n\r{keys[i]}:\t{self.ARF.get(keys[i]):.6f}\t\t\t{keys[i+1]}:\t{self.ARF.get(keys[i+1]):.6f}")
+            outFile.write("\n\r\n\r")
+
             # write the nonzero sections of memory
 
 
@@ -193,11 +206,10 @@ class Tomasulo:
         in which it was issued.
         """
         # find most recent stage
-        stage = 0
-        for s in self.output[ID]:
-            if s is not None:
-                stage = s
-            else:
+        stage = None
+        for i in range(5):
+            stage = self.output[ID][4-i]
+            if stage is not None:
                 break
         return stage == self.cycle
 
@@ -403,6 +415,8 @@ class Tomasulo:
         if resultID is not None:
             # Verify that we didn't write back this cycle
             if not self.isTooNew(resultID):
+                print(f"Committing instr. {resultID}")
+                print(self.output)
 
                 # Reference ID, destination, value, doneflag, ROB#
                 result = self.ROB.commit()
