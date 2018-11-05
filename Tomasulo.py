@@ -86,6 +86,9 @@ class Tomasulo:
             # Track if we are stalled for branch misprediction
             self.branchStalled = False
 
+            # Track mispredicted branch outcomes across ALUIs
+            self.mispredictions = []
+
         except FileNotFoundError:
             print("ERROR: Invalid filename, please check the filename and path")
             return None
@@ -409,6 +412,21 @@ class Tomasulo:
             #self.RS_MULTFP.markAsExecuting(item)
 
 
+    def checkBranchStage(self):
+        """
+        Checks to see if the most recent ALUI result is a branch, and
+        determines if we need to trigger a branch stall to handle
+        misprediciton
+        """
+        for FU in self.ALUIs:
+            if FU.isBranchOutcomePending():
+                BID, outcome = FU.getBranchOutcome()
+                prediction = self.branch.predict(BID)
+                if outcome != prediction:
+                    selfmispredictions.append(BID)
+                    self.branchStalled = True
+
+
     def memoryStage(self):
         """
         Cues the memory module to perform any queued LD instructions and
@@ -442,7 +460,7 @@ class Tomasulo:
             result = winningFU.getResult()
 
             # Update ROB results
-            dest = self.ROB.findAndUpdateEntry(*result)
+            dest = self.ROB.findAndUpdateEntry(*result[:-1])
 
             # Check if the ROB entry matches the RAT entry
             if self.RAT.get(dest) == dest:

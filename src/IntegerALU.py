@@ -74,11 +74,33 @@ class IntegerALU:
         return len(self.buffer) > 0
 
 
+    def getBranchOutcome(self):
+        """
+        Getter returns the instruction ID of the pending branch outcome and
+        whether or not the pending branch outcome is taken
+
+        @return A tuple containing the branch intruction ID and outcome
+        pending on this ALUI
+
+        Note: Assumes you have called isBranchOutcomePending to verify that
+        the next result in the output buffer is a branch
+        """
+        return (self.buffer[0][0], self.buffer[0][1])
+
+
+    def isBranchOutcomePending(self):
+        """
+        Check if the next result is a branch outcome
+        """
+        return self.buffer[0][2]
+
+
     def getResult(self):
         """
         Getter for oldest execution result
 
-        @return A tuple with the instruction ID followed by the result
+        @return A list containing the instruction ID, the result, and a
+        boolean representing whether this is a branch outcome
         """
         return self.buffer.pop(0)
 
@@ -98,7 +120,7 @@ class IntegerALU:
         if self.time == self.nextFreeTime:
             # If the active instruction has completed, add it to the back of
             # the output queue, and reset the tracking variables
-            self.buffer.append( (self.activeInstruction[0], self.result) )
+            self.buffer.append( [self.activeInstruction[0], self.result, self.activeInstruction[1].startswith('B')] )
             self.activeInstruction = None
             self.nextFreeTime = -1
 
