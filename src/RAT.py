@@ -57,8 +57,11 @@ class RAT():
         print("RAT".ljust(40, '=').rjust(80,'='))
         keys = self.names
         for i in range(0, len(keys), 4):
-            print(f"{keys[i]}:\t{self.reg[keys[i]]}\t\t{keys[i+1]}:\t{self.reg[keys[i+1]]}\t\t{keys[i+2]}:\t{self.reg[keys[i+2]]}\t\t{keys[i+3]}:\t{self.reg[keys[i+3]]}")
-
+            print(f"{keys[i].ljust(3,' ')}: {self.reg[keys[i]]}".ljust(20,' '), end='')
+            print(f"{keys[i+1].ljust(3,' ')}: {self.reg[keys[i+1]]}".ljust(20,' '), end='')
+            print(f"{keys[i+2].ljust(3,' ')}: {self.reg[keys[i+2]]}".ljust(20,' '), end='')
+            print(f"{keys[i+3].ljust(3,' ')}: {self.reg[keys[i+3]]}".ljust(20,' '))
+        print()
 
 if __name__ == "__main__":
     myRAT = RAT()
