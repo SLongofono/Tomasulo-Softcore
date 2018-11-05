@@ -10,7 +10,7 @@ To run the project with a test input, type:
 where <python 3> is your python 3 CLI interpreter and test1.txt is a valid input file
 
 # Test Cases
-The test cases incrementally test that all instructions are properly supported, that the algorithm is executing correctly, and that the additional features are performing their respective tasks correctly.  The test cases are organized into the tests directory by prefix; test1_input.txt and test1_expected.txt designate the input test case file and the hand-derived output expected for that test case.
+The test cases incrementally test that all instructions are properly supported, that the algorithm is executing correctly, and that the additional features are performing their respective tasks correctly.  The test cases are organized into the testCases/ directory by prefix; "test1.txt", "test1_expected.txt", and "test1_output.txt" designate the input test case file, the hand-derived output expected, and the actual output generated respectively.
 
 To test individual modules in the src directory, run them directly as scripts:
 `<python 3> ROB.py`
@@ -29,8 +29,8 @@ To test individual modules in the src directory, run them directly as scripts:
 - [x] FP Adder class
 - [ ] FP Multiplier class
 - [x] Instruction Queue class
-- [ ] Branch Unit class
-- [ ] Memory Unit class
+- [x] Branch Unit class
+- [x] Memory Unit class
 - [x] Integer Register File
 - [x] FP Register File
 - [x] Output Generator
@@ -38,7 +38,7 @@ To test individual modules in the src directory, run them directly as scripts:
 - [x] Execute procedure
 - [x] Memory procedure
 - [x] Writeback procedure
-- [ ] Commit procedure
+- [x] Commit procedure
 
 ## Test Cases
 - [x] Simplest test case: execute a single ALU instruction end-to-end
