@@ -121,6 +121,7 @@ class ROB():
         Pretty-prints the ROB contents
         """
         print("ROB".ljust(38, '=').rjust(80,'='))
+        temp = []
         for i in range(len(self.q)):
             if self.head == i and self.tail == i:
                 prefix = "head/tail->"
@@ -130,7 +131,13 @@ class ROB():
                 prefix = "tail------>"
             else:
                 prefix = "           "
-            print(prefix, f"ROB{i}", self.q[i])
+            temp.append(f"{prefix} ROB{i} {self.q[i]}")
+        if 0 != (len(temp) % 2):
+            temp.append("".ljust(20,' '))
+
+        for i in range(0, len(temp), 2):
+            print(temp[i].ljust(40,' ') ,end='')
+            print(temp[i+1].ljust(40,' '))
         print()
 
 # Test cases, run this script directly to execute
