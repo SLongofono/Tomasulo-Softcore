@@ -30,6 +30,7 @@ class ARF():
         if self.reg['R0'] != 0 or self.reg['F0'] != 0.0:
             raise ValueError("Invalid register file initialization: R0, F0 must be zero")
 
+
     def get(self, key):
         """
         Getter for register entries
@@ -38,6 +39,7 @@ class ARF():
         @return A numeric value representing the contents of the register
         """
         return self.reg[key]
+
 
     def set(self, key, value):
         """
@@ -66,14 +68,19 @@ class ARF():
         """
         print("Integer ARF".ljust(43, '=').rjust(80,'='))
         keys = [f"R{x}" for x in range(32)]
-        for i in range(0,len(keys),2):
-            print(f"{keys[i]}:\t{self.reg[keys[i]]}\t\t\t\t{keys[i+1]}:\t{self.reg[keys[i+1]]}")
+        for i in range(0,len(keys),4):
+            print(f"{keys[i].ljust(3,' ')}: {self.reg[keys[i]]}".ljust(20, ' '), end='')
+            print(f"{keys[i+1].ljust(3,' ')}: {self.reg[keys[i+1]]}".ljust(20, ' '), end='')
+            print(f"{keys[i+2].ljust(3,' ')}: {self.reg[keys[i+2]]}".ljust(20, ' '), end='')
+            print(f"{keys[i+3].ljust(3,' ')}: {self.reg[keys[i+3]]}".ljust(20, ' '))
+        print()
 
         print("Floating Point ARF".ljust(46, '=').rjust(80,'='))
         keys = [f"F{x}" for x in range(32)]
         for i in range(0, len(keys),2):
-            print(f"{keys[i]}:\t{self.reg[keys[i]]:.6f}\t\t\t{keys[i+1]}:\t{self.reg[keys[i+1]]:.6f}")
-
+            print(f"{keys[i].ljust(3,' ')}: {self.reg[keys[i]]:.6f}".ljust(40, ' '), end='')
+            print(f"{keys[i+1].ljust(3,' ')}: {self.reg[keys[i+1]]:.6f}".ljust(40, ' '))
+        print()
 
 # Test cases, run this script directly to execute
 if __name__ == "__main__":
@@ -81,8 +88,15 @@ if __name__ == "__main__":
         ("R1", 13),
         ("R6", -255),
         ("R7", 2**32),
+        ("R8", 2**32),
+        ("R12", 2**32),
+        ("R23", 2**32),
+        ("R24", 2**32),
+        ("R25", 2**32),
+        ("R26", 2**32),
         ("F4", 11/9),
         ("F5", 3.14159),
+        ("F13", 12345678.910111213),
         ("F6", 12345.67891011)
     ]
     myARF = ARF(initVals=myVals)
