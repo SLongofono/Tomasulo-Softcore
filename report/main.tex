@@ -6,7 +6,7 @@
 \begin{document}
 \maketitle
 \section*{Introduction}
-This document outlines the Tomasulo-Softcore library, a Python library written to model a single-core software CPU based on Tomasulo's Algorithm.  The source code is presented as and open-source library, and is available on Github.com under the MIT license.  This library was developed as an academic exercise for the graduate-level computer architecture course at the University of Pittsburgh in Pennsylvania, U.S.A.
+This document outlines the Tomasulo-Softcore library, a Python library written to model a single-core software CPU based on Tomasulo's Algorithm.  The source code is presented as an open-source library, and is available on Github.com under the MIT license.  This library was developed as an academic exercise for the graduate-level computer architecture course at the University of Pittsburgh in Pennsylvania, U.S.A.
 
 The library demonstrates all of the major facets of the algorithm, including register renaming, out-of-order execution, memory disambiguation, speculative execution.
 
@@ -23,11 +23,25 @@ Included in the repository is a shell script used to generate UML diagrams from 
 There are no build instructions for the library, as it is a standalone Python module.  The entry point to execution is Tomasulo.py.  To start the library and print usage instructions, simply invoke your Python interpreter with Tomasulo.py as an argument from the command line.
 
 \subsection{Running Test Inputs}
-All test inputs are passed as command line arguments.  The test inputs all follow a rigid and ordered format, as demonstrated by the file "example\_input.txt" in the "testCases/" directory of the repository root.  To execute the library on a test input file, type:
+All test inputs are passed as command line arguments.  The test inputs all follow a rigid and ordered format, as demonstrated by the file "example\_input.txt" in the "testCases/" directory of the repository root.  For convenience, all of our test cases are located in this "textCases/" directory.  To execute the library on a test input file, type:
 \begin{verbatim}
     <Python3.6> Tomasulo.py <filepath>
 \end{verbatim}
 where Python3.6 is the CLI invoker for your Python 3 interpreter, and filepath is the absolute filepath of the desired test input.
+
+\subsection{Defining System Inputs}
+The system inputs follow a rigid and specifically ordered format.  All inputs should be UTF-8 compliant, printable text format files.  The specifications are presented in order below:
+\begin{itemize}
+    \item The first line of the file is ignored.  In our sample inputs, the first line is used to label the table columns that the following 4 lines compose.
+    \item The next four lines begin with a label, followed by a space, and then 4 entries of either a natural number or a space (only permissible in the third position).  The labels are "Integer adder", "FP adder", "FP multiplier", and Load/store unit".
+    \item The next line begins with the label "ROB entries = ", followed by a natural number.
+    \item The next line begins with "CDB buffer entries = ", followed by a natural number.
+    \item The next line is optional.  It consists of comma-delineated patterns of the form A=B.  The pattern A is the letter "R" or the letter "F" concatenated with exactly one of the numbers 0-31.  The pattern B is an integer value which can be represented in 32 bits.
+    \item The next line is optional.  It consists of comma-delineated patterns of the form Meme[A]=B.  The pattern A is a single natural number between 0 and 255 inclusive.  The pattern B is an integer or floating point value which can be represented in 64 bits.
+    \item The next line is blank.  This line is not optional.
+    \item The remainder of the lines in the file are instructions.  All instructions are represented as shown in the rubric.  Replace immediate values and offsets by their integer equivalents.  In the case of a branch instruction, express the offset in terms of instructions to move relative to PC-next.
+    \item The last line of the file should be the last instruction.
+\end{itemize}
 
 \subsection{System Outputs}
 The library will output execution information in two ways; during execution, progress and the contents of various system components are displayed to \textbf{stdout}.  Upon completion, an output file will be written to the directory containing the input file.  The output file will be the same name as the input file, with "\_output" appended just before the file extension.
@@ -56,84 +70,43 @@ SUB R4,R2,R3
 
 \subsubsection*{Output}
 \begin{verbatim}
-==============================Instruction Completion Table======================
-
+================================Instruction Completion Table====================
 ID	| IS		 EX		 MEM		 WB		 COM
-
 0	| 0		 1		 None		 2		 3
-
 1	| 1		 2		 None		 3		 4
 
+================================Integer ARF=====================================
+R0 : 0              R1 : 50             R2 : 20             R3 : 30             
+R4 : -10            R5 : 0              R6 : 0              R7 : 0              
+R8 : 0              R9 : 0              R10: 0              R11: 0              
+R12: 0              R13: 0              R14: 0              R15: 0              
+R16: 0              R17: 0              R18: 0              R19: 0              
+R20: 0              R21: 0              R22: 0              R23: 0              
+R24: 0              R25: 0              R26: 0              R27: 0              
+R28: 0              R29: 0              R30: 0              R31: 0              
 
-=====================================Integer ARF================================
-
-R0:	0				R1:	50
-
-R2:	20				R3:	30
-
-R4:	-10				R5:	0
-
-R6:	0				R7:	0
-
-R8:	0				R9:	0
-
-R10:	0				R11:	0
-
-R12:	0				R13:	0
-
-R14:	0				R15:	0
-
-R16:	0				R17:	0
-
-R18:	0				R19:	0
-
-R20:	0				R21:	0
-
-R22:	0				R23:	0
-
-R24:	0				R25:	0
-
-R26:	0				R27:	0
-
-R28:	0				R29:	0
-
-R30:	0				R31:	0
+================================Floating Point ARF==============================
+F0 : 0.000000                           F1 : 0.000000                           
+F2 : 30.100000                          F3 : 0.000000                           
+F4 : 0.000000                           F5 : 0.000000                           
+F6 : 0.000000                           F7 : 0.000000                           
+F8 : 0.000000                           F9 : 0.000000                           
+F10: 0.000000                           F11: 0.000000                           
+F12: 0.000000                           F13: 0.000000                           
+F14: 0.000000                           F15: 0.000000                           
+F16: 0.000000                           F17: 0.000000                           
+F18: 0.000000                           F19: 0.000000                           
+F20: 0.000000                           F21: 0.000000                           
+F22: 0.000000                           F23: 0.000000                           
+F24: 0.000000                           F25: 0.000000                           
+F26: 0.000000                           F27: 0.000000                           
+F28: 0.000000                           F29: 0.000000                           
+F30: 0.000000                           F31: 0.000000                           
 
 
-==================================Floating Point ARF============================
-
-F0:	0.000000			F1:	0.000000
-
-F2:	30.100000			F3:	0.000000
-
-F4:	0.000000			F5:	0.000000
-
-F6:	0.000000			F7:	0.000000
-
-F8:	0.000000			F9:	0.000000
-
-F10:	0.000000			F11:	0.000000
-
-F12:	0.000000			F13:	0.000000
-
-F14:	0.000000			F15:	0.000000
-
-F16:	0.000000			F17:	0.000000
-
-F18:	0.000000			F19:	0.000000
-
-F20:	0.000000			F21:	0.000000
-
-F22:	0.000000			F23:	0.000000
-
-F24:	0.000000			F25:	0.000000
-
-F26:	0.000000			F27:	0.000000
-
-F28:	0.000000			F29:	0.000000
-
-F30:	0.000000			F31:	0.000000
-
+================================Memory Unit=====================================
+Word 04: 1.000000                       Word 08: 2.000000                       
+Word 12: 3.400000
 \end{verbatim}
 
 \subsection{simple\_test2.txt}
