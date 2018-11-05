@@ -54,7 +54,14 @@ class MemoryUnit:
 
     def dump(self):
         print("Memory Unit".ljust(50, '=').rjust(80,'='))
-        print("Memory content:")
-        print([x for x in self.memory if x != 0.0])
-        print()
+        print("Memory contents:")
+        entries = [(str(i),x) for i,x in enumerate(self.memory) if x != 0.0]
+        newLine = False
+        for address, contents in entries:
+            print(f"Word {address.rjust(2,'0')}: {contents:.6f} ".ljust(40,' '),end='')
+            if newLine:
+                print()
+            newLine = not newLine
+
+        print('\n')
 

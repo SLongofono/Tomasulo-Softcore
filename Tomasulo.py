@@ -67,6 +67,9 @@ class Tomasulo:
 
             # Instatiate Memory
             self.memory = MemoryUnit()
+            for byteAddress, value in self.Params["MemInitData"]:
+                self.memory.mem_write(byteAddress, value)
+            self.memory.dump()
 
             # Instantiate Branch Unit
             self.branch = BranchUnit()
@@ -89,24 +92,24 @@ class Tomasulo:
         print("Beginning Simulation")
 
         while self.numRetiredInstructions < len(self.Params["Instructions"]):
+            print(''.ljust(80,'='))
+            print(f" Cycle {self.cycle}".ljust(42, '=').rjust(80,'='))
+            print(''.rjust(80,'='))
+
             # Try to issue new instructions
             self.issueStage()
-            print(self.output)
 
             # Try to execute ready instructions
             self.executeStage()
-            print(self.output)
 
             # Try to write back load results
             self.memoryStage()
 
             # Try to write back FU results
             self.writebackStage()
-            print(self.output)
 
             # Try to commit
             self.commitStage()
-            print(self.output)
 
             # Advance time
             self.advanceTime()
@@ -116,8 +119,8 @@ class Tomasulo:
 
             if(self.cycle == 5):
                 break
-        self.writeOutput()
 
+        self.writeOutput()
         print("Simulation Complete")
 
 
@@ -173,25 +176,43 @@ class Tomasulo:
         with open(fileName, 'w') as outFile:
             # Write the instruction stage tracking
             outFile.write("Instruction Completion Table".ljust(50,'=').rjust(80,'='))
-            outFile.write("\n\rID\t| IS\t\t EX\t\t MEM\t\t WB\t\t COM\n\r")
+            outFile.write("\nID\t| IS\t\t EX\t\t MEM\t\t WB\t\t COM\n")
             for inst, stages in self.output.items():
-                outFile.write(f"{inst}\t| {stages[0]}\t\t {stages[1]}\t\t {stages[2]}\t\t {stages[3]}\t\t {stages[4]}\n\r")
-            outFile.write("\n\r")
+                outFile.write(f"{inst}\t| {stages[0]}\t\t {stages[1]}\t\t {stages[2]}\t\t {stages[3]}\t\t {stages[4]}\n")
+            outFile.write("\n")
 
             # Write the register file
             outFile.write("Integer ARF".ljust(43, '=').rjust(80,'='))
+            outFile.write('\n')
             keys = [f"R{x}" for x in range(32)]
-            for i in range(0,len(keys),2):
-                outFile.write(f"\n\r{keys[i]}:\t{self.ARF.get(keys[i])}\t\t\t\t{keys[i+1]}:\t{self.ARF.get(keys[i+1])}")
-            outFile.write("\n\r\n\r")
+            for i in range(0,len(keys),4):
+                outFile.write(f"{keys[i].ljust(3,' ')}: {self.ARF.get(keys[i])}".ljust(20, ' '))
+                outFile.write(f"{keys[i+1].ljust(3,' ')}: {self.ARF.get(keys[i+1])}".ljust(20, ' '))
+                outFile.write(f"{keys[i+2].ljust(3,' ')}: {self.ARF.get(keys[i+2])}".ljust(20, ' '))
+                outFile.write(f"{keys[i+3].ljust(3,' ')}: {self.ARF.get(keys[i+3])}".ljust(20, ' '))
+                outFile.write("\n")
+            outFile.write("\n")
 
             outFile.write("Floating Point ARF".ljust(46, '=').rjust(80,'='))
+            outFile.write('\n')
             keys = [f"F{x}" for x in range(32)]
             for i in range(0, len(keys),2):
-                outFile.write(f"\n\r{keys[i]}:\t{self.ARF.get(keys[i]):.6f}\t\t\t{keys[i+1]}:\t{self.ARF.get(keys[i+1]):.6f}")
-            outFile.write("\n\r\n\r")
+                outFile.write(f"{keys[i].ljust(3,' ')}: {self.ARF.get(keys[i]):.6f}".ljust(40, ' '))
+                outFile.write(f"{keys[i+1].ljust(3,' ')}: {self.ARF.get(keys[i+1]):.6f}".ljust(40, ' '))
+                outFile.write("\n")
+            outFile.write("\n\n")
 
             # write the nonzero sections of memory
+            outFile.write("Memory Unit".ljust(50, '=').rjust(80,'='))
+            outFile.write('\n')
+            entries = [(str(i),x) for i,x in enumerate(self.memory.memory) if x != 0.0]
+            newLine = False
+            for address, contents in entries:
+                outFile.write(f"Word {address.rjust(2,'0')}: {contents:.6f} ".ljust(40,' '))
+                if newLine:
+                    outFile.write('\n')
+                newLine = not newLine
+            outFile.write('\n')
 
 
     def isTooNew(self, ID):
@@ -252,11 +273,7 @@ class Tomasulo:
                 # Update operands per the RAT
                 # nextInst  [0, ('ADD', 'R1', 'R2', 'R3')]
                 # Mapping ('ADD', 'R1', 'R2', 'R3')
-
-                #
-                print(nextInst)
                 mapping = self.RAT.getMapping(nextInst[1])
-                print("Mapping: ", mapping)
 
                 # Add the entry to the ROB
                 ROBId = self.ROB.add(nextInst[0],nextInst[1][1])
@@ -416,7 +433,6 @@ class Tomasulo:
             # Verify that we didn't write back this cycle
             if not self.isTooNew(resultID):
                 print(f"Committing instr. {resultID}")
-                print(self.output)
 
                 # Reference ID, destination, value, doneflag, ROB#
                 result = self.ROB.commit()
@@ -448,6 +464,7 @@ class Tomasulo:
 # End Class Tomasulo
 
 
+# Run simulation by executing this script directly
 if __name__ == "__main__":
     import sys
     if len(sys.argv) < 2:
@@ -455,5 +472,4 @@ if __name__ == "__main__":
         Tomasulo.usage()
         sys.exit(1)
     myCore = Tomasulo(sys.argv[1])
-    myCore.dump()
     myCore.runSimulation()
