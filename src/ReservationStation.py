@@ -115,6 +115,7 @@ class ReservationStation:
         print("Index\tID\tOperation\tQi\tQj\tVi\tVj")
         if len(self.q) < 1:
             print("\t[ empty ]")
+	#I think here should be an else
         for idx, entry in enumerate(self.q):
             print(f"{idx}\t{entry[ID]}\t{entry[OPERATION]}\t\t{entry[TAG_I]}\t{entry[TAG_J]}\t{entry[VALUE_I]}\t{entry[VALUE_J]}")
         print()

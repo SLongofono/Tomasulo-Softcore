@@ -96,48 +96,4 @@ class FPAdder:
 			self.pipeline.add(instr_id, schedule, result) 
 		else:
 		    raise ValueError("Unknown operation [ {} ] in FP.adder, time [ {} ]".format(op, self.time))
-
-	def busy(self):
-		return self.pipeline.busy() and len(self.buffer) < self.bufferLen 	
-
-	def isResultReady(self):
-		return len(self.buffer) > 0
-
-	def getResult(self):
-		return self.buffer.pop(0)
-
-	def advanceTime(self):
-		self.time += 1
-		output = self.pipeline.check(self.time) 		
-		self.buffer += output
-
-	def dump(self):
-		print("FP Adder".ljust(44, '=').rjust(80,'='))
-		print("Time:\t\t\t{}".format(self.time))
-		print("Busy:\t\t\t{}".format(self.busy()))
-		print("Instruction:\t\t{}".format(self.activeInstruction))
-		print("Output Buffer Contents:")
-		for item in self.buffer:
-			print("\tID:{}, Value:{}".format(item[0],item[1]))
-		print()
-
-if __name__ == "__main__":
-	t = 0
-	latency = {'MUL.d': 5, 'ADD.d': 3, 'SUB.d': 3}
-	myALU = FPAdder(latency, 3)
-	print(myALU.busy)
-	myALU.dump()
-	myALU.execute(10,"ADD.d", 33, -1)
-	myALU.dump()
-	myALU.advanceTime()
-	myALU.dump()
-	print("Result ready?:{}".format(myALU.isResultReady()))
-	myALU.advanceTime()
-	myALU.advanceTime()
-	myALU.advanceTime()
-	print("Result ready?:{}".format(myALU.isResultReady()))
-	r = myALU.getResult()
-	print(r)
-	myALU.dump()
-
-
+)
