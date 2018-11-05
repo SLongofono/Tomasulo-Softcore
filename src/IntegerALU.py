@@ -107,7 +107,7 @@ class IntegerALU:
         """
         Pretty-prints the state of the ALU
         """
-        print("Integer ALU".ljust(44, '=').rjust(80,'='))
+        print("Integer ALU".ljust(48, '=').rjust(80,'='))
         print(f"Time:\t\t\t{self.time}")
         print(f"Busy:\t\t\t{self.busy()}")
         print(f"Instruction:\t\t{self.activeInstruction}")

@@ -54,7 +54,7 @@ class RAT():
         """
         Pretty-prints the RAT contents
         """
-        print("RAT".ljust(40, '=').rjust(80,'='))
+        print("RAT".ljust(48, '=').rjust(80,'='))
         keys = self.names
         for i in range(0, len(keys), 4):
             print(f"{keys[i].ljust(3,' ')}: {self.reg[keys[i]]}".ljust(20,' '), end='')

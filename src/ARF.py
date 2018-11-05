@@ -66,7 +66,7 @@ class ARF():
         """
         Pretty-prints the contents of the ARF
         """
-        print("Integer ARF".ljust(43, '=').rjust(80,'='))
+        print("Integer ARF".ljust(48, '=').rjust(80,'='))
         keys = [f"R{x}" for x in range(32)]
         for i in range(0,len(keys),4):
             print(f"{keys[i].ljust(3,' ')}: {self.reg[keys[i]]}".ljust(20, ' '), end='')
@@ -75,7 +75,7 @@ class ARF():
             print(f"{keys[i+3].ljust(3,' ')}: {self.reg[keys[i+3]]}".ljust(20, ' '))
         print()
 
-        print("Floating Point ARF".ljust(46, '=').rjust(80,'='))
+        print("Floating Point ARF".ljust(48, '=').rjust(80,'='))
         keys = [f"F{x}" for x in range(32)]
         for i in range(0, len(keys),2):
             print(f"{keys[i].ljust(3,' ')}: {self.reg[keys[i]]:.6f}".ljust(40, ' '), end='')

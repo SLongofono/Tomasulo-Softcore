@@ -51,7 +51,7 @@ class InstructionQueue:
         """
         Pretty-prints the contents and state of the instruction queue
         """
-        print("Instruction Queue".ljust(49, '=').rjust(80,'='))
+        print("Instruction Queue".ljust(48, '=').rjust(80,'='))
         print("\tID\t\tInstruction")
         for i, entry in enumerate(self.instructions):
             if i == self.next:

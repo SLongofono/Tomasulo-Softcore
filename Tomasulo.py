@@ -93,7 +93,7 @@ class Tomasulo:
 
         while self.numRetiredInstructions < len(self.Params["Instructions"]):
             print(''.ljust(80,'='))
-            print(f" Cycle {self.cycle}".ljust(42, '=').rjust(80,'='))
+            print(f" Cycle {self.cycle}".ljust(48, '=').rjust(80,'='))
             print(''.rjust(80,'='))
 
             # Try to issue new instructions
@@ -162,7 +162,7 @@ class Tomasulo:
         self.ROB.dump()
         self.ARF.dump()
         self.RAT.dump()
-        # TODO dump memory
+        self.memory.dump()
 
 
     def writeOutput(self):
@@ -175,14 +175,14 @@ class Tomasulo:
 
         with open(fileName, 'w') as outFile:
             # Write the instruction stage tracking
-            outFile.write("Instruction Completion Table".ljust(50,'=').rjust(80,'='))
+            outFile.write("Instruction Completion Table".ljust(48,'=').rjust(80,'='))
             outFile.write("\nID\t| IS\t\t EX\t\t MEM\t\t WB\t\t COM\n")
             for inst, stages in self.output.items():
                 outFile.write(f"{inst}\t| {stages[0]}\t\t {stages[1]}\t\t {stages[2]}\t\t {stages[3]}\t\t {stages[4]}\n")
             outFile.write("\n")
 
             # Write the register file
-            outFile.write("Integer ARF".ljust(43, '=').rjust(80,'='))
+            outFile.write("Integer ARF".ljust(48, '=').rjust(80,'='))
             outFile.write('\n')
             keys = [f"R{x}" for x in range(32)]
             for i in range(0,len(keys),4):
@@ -193,7 +193,7 @@ class Tomasulo:
                 outFile.write("\n")
             outFile.write("\n")
 
-            outFile.write("Floating Point ARF".ljust(46, '=').rjust(80,'='))
+            outFile.write("Floating Point ARF".ljust(48, '=').rjust(80,'='))
             outFile.write('\n')
             keys = [f"F{x}" for x in range(32)]
             for i in range(0, len(keys),2):
@@ -203,7 +203,7 @@ class Tomasulo:
             outFile.write("\n\n")
 
             # write the nonzero sections of memory
-            outFile.write("Memory Unit".ljust(50, '=').rjust(80,'='))
+            outFile.write("Memory Unit".ljust(48, '=').rjust(80,'='))
             outFile.write('\n')
             entries = [(str(i),x) for i,x in enumerate(self.memory.memory) if x != 0.0]
             newLine = False

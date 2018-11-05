@@ -111,7 +111,7 @@ class ReservationStation:
         """
         Pretty-prints the RS contents
         """
-        print("Reservation Station".ljust(50, '=').rjust(80, '='))
+        print("Reservation Station".ljust(48, '=').rjust(80, '='))
         print("Index\tID\tOperation\tQi\tQj\tVi\tVj")
         if len(self.q) < 1:
             print("\t[ empty ]")

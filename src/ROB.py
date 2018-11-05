@@ -120,7 +120,7 @@ class ROB():
         """
         Pretty-prints the ROB contents
         """
-        print("ROB".ljust(38, '=').rjust(80,'='))
+        print("ROB".ljust(48, '=').rjust(80,'='))
         temp = []
         for i in range(len(self.q)):
             if self.head == i and self.tail == i:

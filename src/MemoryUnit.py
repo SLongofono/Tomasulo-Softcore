@@ -53,7 +53,7 @@ class MemoryUnit:
         return self.memory[int(addr/4)]
 
     def dump(self):
-        print("Memory Unit".ljust(50, '=').rjust(80,'='))
+        print("Memory Unit".ljust(48, '=').rjust(80,'='))
         print("Memory contents:")
         entries = [(str(i),x) for i,x in enumerate(self.memory) if x != 0.0]
         newLine = False

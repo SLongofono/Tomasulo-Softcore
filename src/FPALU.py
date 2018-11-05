@@ -66,7 +66,7 @@ class FPMultiplier:
 		self.buffer += output
 	
 	def dump(self):
-		print("FP Multiplier".ljust(44, '=').rjust(80,'='))
+		print("FP Multiplier".ljust(48, '=').rjust(80,'='))
 		print("Time:\t\t\t{}".format(self.time))
 		print("Busy:\t\t\t{}".format(self.busy()))
 		print("Instruction:\t\t{}".format(self.activeInstruction))
