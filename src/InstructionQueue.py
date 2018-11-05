@@ -17,6 +17,7 @@ class InstructionQueue:
         self.next = 0
         self.nextID = 0
 
+
     def fetch(self, offset=0):
         """
         Gets the next instruction to execute
@@ -59,6 +60,13 @@ class InstructionQueue:
             else:
                 print(f"\t{i}\t\t{entry}")
         print()
+
+
+    def peek(self):
+        """
+        Retrieve a copy of the next instruction type and its unique ID
+        """
+        return (int(self.nextID), self.instructions[self.next][0])
 
 
 if __name__ == "__main__":

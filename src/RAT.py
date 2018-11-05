@@ -50,6 +50,16 @@ class RAT():
         self.reg[key] = value
 
 
+    def getState(self):
+        """
+        Getter for a copy of the RAT's internal state, for use by the branch
+        unit
+
+        @return A dictionary copy of the internal state of the RAT
+        """
+        return dict(self.reg)
+
+
     def dump(self):
         """
         Pretty-prints the RAT contents

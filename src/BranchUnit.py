@@ -22,6 +22,7 @@ class BranchUnit:
         self.maxCopies = maxRATCopies
         # Store copies of the RAT when prompted
         self.RATs = []
+        
         # The branch translation buffer
         self.BTB = {
             "000":True,
@@ -35,21 +36,17 @@ class BranchUnit:
         }
 
 
-    def findOldest(self):
-        """
-        Determines the oldest entry in the BTB
-
-        @return A string representing the oldest entry in the BTB
-        """
-        oldest = 2**32
-        oldestKey = None
-        for key, val in self.BTB:
-            if val[1] < oldest:
-                oldestKey = key
-        return key
-
-
     def int2BinStr(self, I):
+        """
+        Given a non-negative integer value, returns a string representing the 3
+        LSBs of the binary representation of that integer.
+
+        @param I An integer value
+        @return A string of length 3 representing the lowest 3 bits of the
+        binary representation of the given integer
+
+        Note: it is assumed that the integer is positive
+        """
         return f"{I:08b}"[-3:]
 
 
@@ -84,8 +81,57 @@ class BranchUnit:
         address = self.int2BinStr(ID)
         self.BTB[address] = taken
 
+    
+    def saveRAT(self, ID, RATdict):
+        """
+        Given the current cycle, the ID of a branch instruction, and a copy of
+        the current RAT state, stores the state in the RATs list.
+
+        @param cycle An integer representing the current wall time in cycles
+        @param ID An integer representing the instruction ID of the branch
+        instruction associated with the RAT state
+        @param RATdict A dictionary representing the RAT state
+
+        It is assumed that a copy of the RAT state is passed in rather than a
+        direct reference
+        """
+        if len(self.RATs) < self.maxRATCopies:
+            self.RATs.append((ID, RATdict))
+            return True
+        return False
+
+
+    def rollBack(self, ID):
+        """
+        Given the instruction ID of a mis-predicted branch, retrieve the RAT
+        state stored for that branch and purge any RAT states stored after it.
+
+        @param ID An integer representing the instruction ID of the branch
+        instruction entry to retrieve
+        @return A tuple containing dictionary representing the RAT state just before the
+        instruction passed in was encountered
+
+        Note: Assumes that the IDs are unique and in strictly ascending order
+        Note: Assumes that the branch has been stored previously
+        """
+        idx = 0
+        for entry in self.RATs:
+            if entry[0] == ID:
+                break
+            else:
+                idx += 1
+
+        # Destroy all state that came after the speculation
+        self.RATs = self.RATs[:idx+1]
+
+        # Return the state at the time of speculation
+        return self.RATS.pop(idx)
+
 
     def dump(self):
+        """
+        Pretty-prints the contents of the branch unit
+        """
         print(f"Branch Predictor".ljust(48, '=').rjust(80,'='))
         keys = sorted(self.BTB.keys())
         for i in range(0, len(keys), 4):
@@ -94,8 +140,9 @@ class BranchUnit:
             print(f"Address {keys[i+2]}: {str(self.BTB[keys[i+2]]).ljust(5, ' ')}".ljust(20, ' '), end='')
             print(f"Address {keys[i+3]}: {str(self.BTB[keys[i+3]]).ljust(5, ' ')}".ljust(20, ' '))
 
-        if len(self.RATs) > 0:
-            print(self.RATs)
+        for key, val in self.RATS.items():
+            print(f"Branch Instruction {key}:")
+            print(val)
         print()
 
 

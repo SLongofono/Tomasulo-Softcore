@@ -77,8 +77,14 @@ class Tomasulo:
             # Track retired instruction count globally
             self.numRetiredInstructions = 0
 
-           # Track time as cycles
+            # Track time as cycles
             self.cycle = 0
+
+            # Track PCnext offset to assist with branching
+            self.fetchOffset = 0
+
+            # Track if we are stalled for branch misprediction
+            self.branchStalled = False
 
         except FileNotFoundError:
             print("ERROR: Invalid filename, please check the filename and path")
@@ -96,26 +102,36 @@ class Tomasulo:
             print(f" Cycle {self.cycle}".ljust(48, '=').rjust(80,'='))
             print(''.rjust(80,'='))
 
-            # Try to issue new instructions
-            self.issueStage()
+            if self.branchStalled:
+                # Recover RAT and associated branch instruction ID
+                # Clear RS for speculative instructions
+                # Clear ROB entries after branch
+                # Update fetch offset per true branch outcome
+                # Update branch outcome in branch unit
+                print("Stalled due to branch misprediction")
+                self.branchStalled = False
 
-            # Try to execute ready instructions
-            self.executeStage()
+            else:
+                # Try to issue new instructions
+                self.issueStage()
 
-            # Try to write back load results
-            self.memoryStage()
+                # Try to execute ready instructions
+                self.executeStage()
 
-            # Try to write back FU results
-            self.writebackStage()
+                # Try to write back load results
+                self.memoryStage()
 
-            # Try to commit
-            self.commitStage()
+                # Try to write back FU results
+                self.writebackStage()
 
-            # Advance time
-            self.advanceTime()
+                # Try to commit
+                self.commitStage()
 
-            # Log state
-            self.dump()
+                # Advance time
+                self.advanceTime()
+
+                # Log state
+                self.dump()
 
             if(self.cycle == 5):
                 break
@@ -242,28 +258,40 @@ class Tomasulo:
         if not self.IQ.empty():
             if not self.ROB.isFull():
                 # Peek at PC
-                nextName = self.IQ.instructions[self.IQ.next][0]
+                nextName = self.IQ.peek()[1]
 
                 # Check that the relevant RS is not full
                 # Fetch actual instruction
                 if (nextName == "LD") or (nextName == "SD"):
                     if not self.memory.q.isFull():
-                        nextInst = self.IQ.fetch()
+                        nextInst = self.IQ.fetch(offset=self.fetchOffset)
                         # TODO Add in memory-specific issue handling here
                     return
 
                 elif (nextName == "ADD.D") or (nextName == "SUB.D"):
                     if not self.RS_ALUFPs.isFull():
-                        nextInst = self.IQ.fetch()
+                        nextInst = self.IQ.fetch(offset=self.fetchOffset)
                     else:
                         return
 
                 elif (nextName == "MULT.D"):
                     if not self.RS_MULTFPs.isFull():
-                        nextInst = self.IQ.fetch()
+                        nextInst = self.IQ.fetch(offset=self.fetchOffset)
                     else:
                         return
 
+                elif (nextName == "BNE") or (nextName == "BEQ"):
+                    if not self.RS_ALUIs.isFull():
+                        # Store a copy of the RAT
+                        canProceed = self.branch.saveRAT(self.IQ.peek()[0], self.RAT.getState())
+                        if canProceed:
+                            nextInst = self.IQ.fetch(offset=self.fetchOffset)
+                            predictTaken = self.branch.predict(nextInst[0])
+                            if predictTaken:
+                                # update global fetch offset to branch target
+                                self.fetchOffset = int(nextInst[1][3])
+                        else:
+                            return
                 else:
                     if not self.RS_ALUIs.isFull():
                         nextInst = self.IQ.fetch()
