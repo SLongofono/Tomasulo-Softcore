@@ -49,7 +49,7 @@ The library will output execution information in two ways; during execution, pro
 \section{Verification \& Testing}
 In order to verify a proper and complete implementation of Tomasulo's algorithm, we developed a series of progressively more complex test inputs.  All of the test cases used are provided in the repository under the "testCases/" directory.  For convenience, they are repeated here along with a short description of which feature they verify.
 
-\subsection{simple\_test1.txt}
+\subsection{simple1.txt}
 This test was designed to test a pair of independent integer ALU instructions, as a verification that our system could correctly process both types of Integer ALU instructions in isolation.  It also serves as a verification of the general flow of the program, excluding the memory stage.
 
 \subsubsection*{Input}
@@ -109,7 +109,7 @@ Word 04: 1.000000                       Word 08: 2.000000
 Word 12: 3.400000
 \end{verbatim}
 
-\subsection{simple\_test2.txt}
+\subsection{simple2.txt}
 This test was designed to test a pair of independent floating point ALU instructions, as a verification that our system could correctly process both types of floating point ALU instructions in isolation.  It also serves as a verification of the general flow of the program, excluding the memory stage.
 
 \subsubsection*{Input}
@@ -123,7 +123,7 @@ This test was designed to test a pair of independent floating point ALU instruct
 \end{verbatim}
 
 
-\subsection{simple\_test3.txt}
+\subsection{simple3.txt}
 This test was designed to test a pair of independent floating point multiplier instructions, as a verification that our system could correctly process floating point multiplier instructions in isolation.
 
 \subsubsection*{Input}
@@ -136,7 +136,7 @@ This test was designed to test a pair of independent floating point multiplier i
     
 \end{verbatim}
 
-\subsection{simple\_test4.txt}
+\subsection{simple4.txt}
 This test case was designed to test the load and store instructions in isolation.  It also serves as a verification of the general flow of the program, excluding the branch unit.
 
 \subsubsection*{Input}
@@ -149,7 +149,7 @@ This test case was designed to test the load and store instructions in isolation
     
 \end{verbatim}
 
-\subsection{simple\_test5.txt}
+\subsection{simple5.txt}
 This test case was designed to test the branch unit with a single branch instruction.  It serves to test the simplest functions of the branch unit, including storing copies of the RAT and correct branch prediction.
 
 \subsubsection*{Input}
@@ -162,7 +162,7 @@ This test case was designed to test the branch unit with a single branch instruc
     
 \end{verbatim}
 
-\subsection{simple\_test6.txt}
+\subsection{simple6.txt}
 This test case was designed to test corner cases of the system configuration.  This test will issue instructions to saturate the capacity of all functional units by filling the output buffers and the reservation stations.  The goal is to prove that the library can make forward progress in the face of a demanding load.
 
 \subsubsection*{Input}
@@ -175,7 +175,7 @@ This test case was designed to test corner cases of the system configuration.  T
     
 \end{verbatim}
 
-\subsection{simple\_test7.txt}
+\subsection{simple7.txt}
 This test case was designed to verify the absence of WAW hazards, a behavior that the algorithm was designed to remove.
 
 \subsubsection*{Input}
@@ -188,7 +188,7 @@ This test case was designed to verify the absence of WAW hazards, a behavior tha
     
 \end{verbatim}
 
-\subsection{simple\_test8.txt}
+\subsection{simple8.txt}
 This test case was designed to verify the absence of WAR hazards, a behavior that the algorithm was designed to remove.
 
 \subsubsection*{Input}
@@ -201,7 +201,7 @@ This test case was designed to verify the absence of WAR hazards, a behavior tha
     
 \end{verbatim}
 
-\subsection{simple\_test9.txt}
+\subsection{simple9.txt}
 This test case was designed to verify that the system is capable of handling RAW dependencies.  Several truly dependent instructions are issued for each of the types of functional units, to test the ability to complete execution as prescribed by Tomasulo's algorithm.
 
 \subsubsection*{Input}
@@ -214,7 +214,7 @@ This test case was designed to verify that the system is capable of handling RAW
     
 \end{verbatim}
 
-\subsection{simple\_test10.txt}
+\subsection{simple10.txt}
 This test case was designed to verify correct operation of the memory unit.  Specifically, it tests that the memory unit is able to disambiguate dependencies among loads and stores, and ensure both correctness and precision of execution in the memory unit.
 
 \subsubsection*{Input}
@@ -227,7 +227,7 @@ This test case was designed to verify correct operation of the memory unit.  Spe
     
 \end{verbatim}
 
-\subsection{simple\_test11.txt}
+\subsection{simple11.txt}
 This test case was designed to induce failure (exceptions) in the case of illegal instructions.  This includes writing to read-only registers, malformed instruction names, malformed register names, and improper types in the instruction input.
 
 \subsubsection*{Input}
@@ -240,7 +240,7 @@ This test case was designed to induce failure (exceptions) in the case of illega
     
 \end{verbatim}
 
-\subsection{complex\_test1.txt}
+\subsection{complex1.txt}
 This test case was designed to test a more true-to-life program, involving all the instructions in the ISA.  Dependencies exist among the instructions, and there are a sufficient number of instructions to induce a few stalls due to architecture.
 
 \subsubsection*{Input}
@@ -253,7 +253,7 @@ This test case was designed to test a more true-to-life program, involving all t
     
 \end{verbatim}
 
-\subsection{complex\_test2.txt}
+\subsection{complex2.txt}
 This test case was designed to test the ability of the branch unit to handle a failed speculation in isolation.  The predicted branch target is a group of long-latency instructions, ensuring that the branch unit is able to properly recover and entirely remove the speculative results from the data path.
 
 \subsubsection*{Input}
@@ -266,7 +266,7 @@ This test case was designed to test the ability of the branch unit to handle a f
     
 \end{verbatim}
 
-\subsection{complex\_test3.txt}
+\subsection{complex3.txt}
 This test case was designed to further test the ability of the branch unit to handle failed speculation.  Two mis-predictions in a row are induced, in order to prove that the branch unit can properly back out speculations from two execution paths.
 
 \subsubsection*{Input}
@@ -279,7 +279,7 @@ This test case was designed to further test the ability of the branch unit to ha
     
 \end{verbatim}
 
-\subsection{complex\_test4.txt}
+\subsection{complex4.txt}
 This test case was designed to further test the ability of the branch unit to handle failed speculation.  Three branches are used in succession, with the first and third mis-predicted and the middle branch correctly predicted.  We chose this test because we are sadomasochists.
 
 \subsubsection*{Input}
@@ -292,7 +292,7 @@ This test case was designed to further test the ability of the branch unit to ha
     
 \end{verbatim}
 
-\subsection{complex\_test5.txt}
+\subsection{complex5.txt}
 This test case was designed to test the limits of the behavior of both the branch unit and the system.  A dependency is induced in the branch condition, followed by many instructions at the predicted target.  The branch condition is mis-predicted, and the result is a more onerous recovery than in previous tests.  
 
 \subsubsection*{Input}
@@ -305,7 +305,7 @@ This test case was designed to test the limits of the behavior of both the branc
     
 \end{verbatim}
 
-\subsection{complex\_test6.txt}
+\subsection{complex6.txt}
 This test case was designed to test our model of system memory (RAM).  Here, we write a series of patterns to memory to verify that loads and stores are executing in the correct order, and that data is written to the correct location.
 
 \subsubsection*{Input}
@@ -318,7 +318,7 @@ This test case was designed to test our model of system memory (RAM).  Here, we 
     
 \end{verbatim}
 
-\subsection{complex\_test7.txt}
+\subsection{complex7.txt}
 This final test case was designed to show that our system can do real work.  We execute a recursive version of a Fibonacci numbers procedure to induce a deep chain of RAW dependencies.
 
 \subsubsection*{Input}
