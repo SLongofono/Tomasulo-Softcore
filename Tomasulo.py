@@ -335,14 +335,7 @@ class Tomasulo:
                     print("ALUIs are full!")
                     return
 
-            # Update operands per the RAT
-            # nextInst  [0, ('ADD', 'R1', 'R2', 'R3')]
-            # Mapping ('ADD', 'R1', 'R2', 'R3')
-            mapping = self.RAT.getMapping(nextInst[1])
             print("Next inst: ", nextInst)
-            print("Mapping: ", mapping)
-
-            self.RAT.dump()
 
             # Add the entry to the ROB
             ROBId = self.ROB.add(nextInst[0],nextInst[1][1])
@@ -351,23 +344,49 @@ class Tomasulo:
             entry = [nextInst[0], ROBId, nextInst[1][0], None, None, None, None]
 
             # Check if operands are ready now and update
-            if mapping[2] == nextInst[1][2]:
-                entry[5] = self.ARF.get(mapping[2])
-            else:
-                entry[3] = mapping[2]
+            # Special case for branches:
+            if nextName.startswith('B'):
+                operand1 = nextInst[1][1]
+                operand2 = nextInst[1][2]
+                map1 = self.RAT.get(operand1)
+                map2 = self.RAT.get(operand2)
+                print(f"Branch: {operand1}, {operand2}")
+                if(map1 == operand1):
+                    entry[5] = self.ARF.get(operand1)
+                else:
+                    entry[3] = map1
+                if(map2 == operand2):
+                    entry[6] = self.ARF.get(operand2)
+                else:
+                    entry[4] = map2
 
-            if mapping[3] == nextInst[1][3]:
-                entry[6] = self.ARF.get(mapping[3])
             else:
-                entry[4] = mapping[3]
+                # Update operands per the RAT
+                # nextInst  [0, ('ADD', 'R1', 'R2', 'R3')]
+                # Mapping ('ADD', 'R1', 'R2', 'R3')
+                mapping = self.RAT.getMapping(nextInst[1])
+                print("Mapping: ", mapping)
+
+                if mapping[2] == nextInst[1][2]:
+                    entry[5] = self.ARF.get(mapping[2])
+                else:
+                    entry[3] = mapping[2]
+
+                if mapping[3] == nextInst[1][3]:
+                    entry[6] = self.ARF.get(mapping[3])
+                else:
+                    entry[4] = mapping[3]
 
             # Update RAT
             self.RAT.set(nextInst[1][1], ROBId)
+            assert(self.RAT.get(nextInst[1][1]) == ROBId)
+
+            self.RAT.dump()
 
             # Add the entry to the RS
-            if(mapping[0] == "ADD.D"):
+            if(nextName == "ADD.D"):
                 self.RS_ALUFPs.add(*entry)
-            elif(mapping[0] == "MULT.D"):
+            elif(nextName == "MULT.D"):
                 self.RS_MULTFPs.add(*entry)
             else:
                 self.RS_ALUIs.add(*entry)
@@ -462,7 +481,7 @@ class Tomasulo:
                 BID, outcome, _ = FU.getResult()
                 prediction = self.branch.predict(BID)
                 if outcome != prediction:
-                    selfmispredictions.append(BID)
+                    self.mispredictions.append(BID)
                     self.branchStalled = True
                 # Since we pulled the result, handle the ROB bookkeeping
                 dest = self.ROB.findAndUpdateEntry(BID, outcome)
