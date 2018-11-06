@@ -41,8 +41,6 @@ class Tomasulo:
 
              # Instantiate Instruction Queue
             self.IQ = InstructionQueue(self.Params["Instructions"])
-            for i in range(len(self.Params["Instructions"])):
-                self.output[i] = [None, None, None, None, None]
 
             # Instantiate ROB, RAT, ARF
             self.ROB = ROB(self.Params["ROBEntries"])
@@ -89,6 +87,9 @@ class Tomasulo:
             # Track mispredicted branch outcomes across ALUIs
             self.mispredictions = []
 
+            # Dumb way to kick out when we are done
+            self.done = False
+
         except FileNotFoundError:
             print("ERROR: Invalid filename, please check the filename and path")
             return None
@@ -100,10 +101,17 @@ class Tomasulo:
         """
         print("Beginning Simulation")
 
-        while self.numRetiredInstructions < len(self.Params["Instructions"]):
+        while not self.done:
             print(''.ljust(80,'='))
             print(f" Cycle {self.cycle}".ljust(48, '=').rjust(80,'='))
             print(''.rjust(80,'='))
+
+            # Log state
+            #self.dump()
+            self.IQ.dump()
+            self.ALUIs[0].dump()
+            self.RS_ALUIs.dump()
+            self.ROB.dump()
 
             if self.branchStalled:
                 # Recover RAT and associated branch instruction ID
@@ -113,30 +121,37 @@ class Tomasulo:
                 # Update branch outcome in branch unit
                 print("Stalled due to branch misprediction")
                 self.branchStalled = False
+                self.advanceTime()
 
             else:
                 # Try to issue new instructions
+                print("ISSUE")
                 self.issueStage()
 
                 # Try to execute ready instructions
+                print("EXECUTE")
                 self.executeStage()
 
+                # Gather and process any branch outcomes for the next cycle
+                print("BRANCHCHECK")
+                self.checkBranchStage()
+
                 # Try to write back load results
+                print("MEMORY")
                 self.memoryStage()
 
                 # Try to write back FU results
+                print("WRITEBACK")
                 self.writebackStage()
 
                 # Try to commit
+                print("COMMIT")
                 self.commitStage()
 
                 # Advance time
                 self.advanceTime()
 
-                # Log state
-                self.dump()
-
-            if(self.cycle == 5):
+            if(self.cycle == 8):
                 break
 
         self.writeOutput()
@@ -167,10 +182,13 @@ class Tomasulo:
         @return None
         """
         # We store Issue, execute, memory, writeback, commit
-        self.output[ID][stage] = self.cycle
+        if not ID in self.output:
+            self.output[ID] = [self.cycle, None, None, None, None]
+        else:
+            self.output[ID][stage] = self.cycle
 
 
-    def dump(self):
+    def dumpAll(self):
         for FU in self.ALUIs:
             FU.dump()
         for FU in self.ALUFPs:
@@ -182,6 +200,7 @@ class Tomasulo:
         self.ARF.dump()
         self.RAT.dump()
         self.memory.dump()
+        self.IQ.dump()
 
 
     def writeOutput(self):
@@ -258,81 +277,105 @@ class Tomasulo:
         """
         Attempts to issue the next instruction in the Instruction Queue
         """
-        if not self.IQ.empty():
-            if not self.ROB.isFull():
-                # Peek at PC
-                nextName = self.IQ.peek()[1]
+        if self.IQ.empty(offset=self.fetchOffset):
+            print(f"EMPTY IQ, offset={self.fetchOffset}")
+            return
 
-                # Check that the relevant RS is not full
-                # Fetch actual instruction
-                if (nextName == "LD") or (nextName == "SD"):
-                    if not self.memory.q.isFull():
-                        nextInst = self.IQ.fetch(offset=self.fetchOffset)
-                        # TODO Add in memory-specific issue handling here
+        if not self.ROB.isFull():
+            # Peek at PC
+            nextName = self.IQ.peek(offset=self.fetchOffset)[1]
+
+            print(f"NEXT INST {nextName}")
+
+            # Check that the relevant RS is not full
+            # Fetch actual instruction
+            if (nextName == "LD") or (nextName == "SD"):
+                if not self.memory.q.isFull():
+                    nextInst = self.IQ.fetch(offset=self.fetchOffset)
+                    self.fetchOffset = 0
+                    # TODO Add in memory-specific issue handling here
+                return
+
+            elif (nextName == "ADD.D") or (nextName == "SUB.D"):
+                if not self.RS_ALUFPs.isFull():
+                    nextInst = self.IQ.fetch(offset=self.fetchOffset)
+                    self.fetchOffset = 0
+                else:
                     return
 
-                elif (nextName == "ADD.D") or (nextName == "SUB.D"):
-                    if not self.RS_ALUFPs.isFull():
-                        nextInst = self.IQ.fetch(offset=self.fetchOffset)
-                    else:
-                        return
+            elif (nextName == "MULT.D"):
+                if not self.RS_MULTFPs.isFull():
+                    nextInst = self.IQ.fetch(offset=self.fetchOffset)
+                    self.fetchOffset = 0
+                else:
+                    return
 
-                elif (nextName == "MULT.D"):
-                    if not self.RS_MULTFPs.isFull():
+            elif (nextName == "BNE") or (nextName == "BEQ"):
+                if not self.RS_ALUIs.isFull():
+                    # Store a copy of the RAT
+                    canProceed = self.branch.saveRAT(self.IQ.peek(offset=self.fetchOffset)[0], self.RAT.getState())
+                    if canProceed:
                         nextInst = self.IQ.fetch(offset=self.fetchOffset)
-                    else:
-                        return
-
-                elif (nextName == "BNE") or (nextName == "BEQ"):
-                    if not self.RS_ALUIs.isFull():
-                        # Store a copy of the RAT
-                        canProceed = self.branch.saveRAT(self.IQ.peek()[0], self.RAT.getState())
-                        if canProceed:
-                            nextInst = self.IQ.fetch(offset=self.fetchOffset)
-                            predictTaken = self.branch.predict(nextInst[0])
-                            if predictTaken:
-                                # update global fetch offset to branch target
-                                self.fetchOffset = int(nextInst[1][3])
+                        predictTaken = self.branch.predict(nextInst[0])
+                        if predictTaken:
+                            # update global fetch offset to branch target
+                            self.fetchOffset = int(nextInst[1][3])
+                            print(f"BRANCH, updating offset to {self.fetchOffset}")
                         else:
-                            return
+                            self.fetchOffset = 0
+                            print(f"BRANCH, updating offset to {self.fetchOffset}")
                 else:
-                    if not self.RS_ALUIs.isFull():
-                        nextInst = self.IQ.fetch()
-                    else:
-                        return
-
-                # Update operands per the RAT
-                # nextInst  [0, ('ADD', 'R1', 'R2', 'R3')]
-                # Mapping ('ADD', 'R1', 'R2', 'R3')
-                mapping = self.RAT.getMapping(nextInst[1])
-
-                # Add the entry to the ROB
-                ROBId = self.ROB.add(nextInst[0],nextInst[1][1])
-
-                # Prepare an entry for the RS
-                entry = [nextInst[0], nextInst[1][0], None, None, None, None]
-
-                # Check if operands are ready now and update
-                if mapping[2] == nextInst[1][2]:
-                    entry[4] = self.ARF.get(mapping[2])
+                    return
+            else:
+                if not self.RS_ALUIs.isFull():
+                    nextInst = self.IQ.fetch(offset=self.fetchOffset)
+                    self.fetchOffset = 0
+                    print(f"Fetched ALU inst : {nextInst[1][0]}")
                 else:
-                    entry[2] = mapping[2]
+                    print("ALUIs are full!")
+                    return
 
-                if mapping[3] == nextInst[1][3]:
-                    entry[5] = self.ARF.get(mapping[3])
-                else:
-                    entry[3] = mapping[3]
+            # Update operands per the RAT
+            # nextInst  [0, ('ADD', 'R1', 'R2', 'R3')]
+            # Mapping ('ADD', 'R1', 'R2', 'R3')
+            mapping = self.RAT.getMapping(nextInst[1])
+            print("Next inst: ", nextInst)
+            print("Mapping: ", mapping)
 
-                # Add the entry to the RS
-                if(mapping[0] == "ADD.D"):
-                    self.RS_ALUFPs.add(*entry)
-                elif(mapping[0] == "MULT.D"):
-                    self.RS_MULTFPs.add(*entry)
-                else:
-                    self.RS_ALUIs.add(*entry)
+            self.RAT.dump()
 
-                # Log the issue in the output dictionary
-                self.updateOutput(nextInst[0], 0)
+            # Add the entry to the ROB
+            ROBId = self.ROB.add(nextInst[0],nextInst[1][1])
+
+            # Prepare an entry for the RS
+            entry = [nextInst[0], ROBId, nextInst[1][0], None, None, None, None]
+
+            # Check if operands are ready now and update
+            if mapping[2] == nextInst[1][2]:
+                entry[5] = self.ARF.get(mapping[2])
+            else:
+                entry[3] = mapping[2]
+
+            if mapping[3] == nextInst[1][3]:
+                entry[6] = self.ARF.get(mapping[3])
+            else:
+                entry[4] = mapping[3]
+
+            # Update RAT
+            self.RAT.set(nextInst[1][1], ROBId)
+
+            # Add the entry to the RS
+            if(mapping[0] == "ADD.D"):
+                self.RS_ALUFPs.add(*entry)
+            elif(mapping[0] == "MULT.D"):
+                self.RS_MULTFPs.add(*entry)
+            else:
+                self.RS_ALUIs.add(*entry)
+
+            print(nextInst)
+
+            # Log the issue in the output dictionary
+            self.updateOutput(entry[0], 0)
 
 
     def executeStage(self):
@@ -342,17 +385,17 @@ class Tomasulo:
         """
 
         # Enumerate a list of ready instructions
-        ready_ALUIs = [x for x in self.RS_ALUIs.q if ( (x[4] is not None) and
-                                                       (x[5] is not None) and
-                                                       (not x[6]) and
+        ready_ALUIs = [x for x in self.RS_ALUIs.q if ( (x[5] is not None) and
+                                                       (x[6] is not None) and
+                                                       (not x[7]) and
                                                        (not self.isTooNew(x[0])))]
-        ready_ALUFPs = [x for x in self.RS_ALUFPs.q if ( (x[4] is not None) and
-                                                         (x[5] is not None) and
-                                                         (not x[6]) and
+        ready_ALUFPs = [x for x in self.RS_ALUFPs.q if ( (x[5] is not None) and
+                                                         (x[6] is not None) and
+                                                         (not x[7]) and
                                                          (not self.isTooNew(x[0])))]
-        ready_MULTFPs = [x for x in self.RS_MULTFPs.q if ( (x[4] is not None) and
-                                                           (x[5] is not None) and
-                                                           (not x[6]) and
+        ready_MULTFPs = [x for x in self.RS_MULTFPs.q if ( (x[5] is not None) and
+                                                           (x[6] is not None) and
+                                                           (not x[7]) and
                                                            (not self.isTooNew(x[0])))]
         #TODO ready_LoadStore = []
 
@@ -360,22 +403,20 @@ class Tomasulo:
         markAsExecuting = []
 
         # Attempt to issue each instruction on an available unit
-        print("Trying to execute ALUI instructions...")
         curPos = 0
         for i, FU in enumerate(self.ALUIs):
             if curPos >= len(ready_ALUIs):
                 break
             if not FU.busy():
                 FU.execute( ready_ALUIs[curPos][0],
-                            ready_ALUIs[curPos][1],
-                            ready_ALUIs[curPos][4],
-                            ready_ALUIs[curPos][5])
+                            ready_ALUIs[curPos][2],
+                            ready_ALUIs[curPos][5],
+                            ready_ALUIs[curPos][6])
                 self.updateOutput(ready_ALUIs[curPos][0], 1)
                 markAsExecuting.append(ready_ALUIs[curPos][0])
                 curPos += 1
 
         # TODO uncomment once these classes are done
-        #print("Trying to execute ALUFP instructions...")
         #curPos = 0
         #for i, FU in enumerate(self.ALUFPs):
         #    if curPos >= len(ready_ALUFPs):
@@ -390,7 +431,6 @@ class Tomasulo:
         #        curPos += 1
 
         # TODO uncomment once these classes are done
-        #print("Trying to execute MULTFP instructions...")
         #curPos = 0
         #for i, FU in enumerate(self.MULTFPs):
         #    if curPos >= len(ready_MULTFPs):
@@ -414,17 +454,19 @@ class Tomasulo:
 
     def checkBranchStage(self):
         """
-        Checks to see if the most recent ALUI result is a branch, and
-        determines if we need to trigger a branch stall to handle
-        misprediciton
+        Checks to see if the most recent ALUI result is a branch, and if so
+        processes the result, and checks for misprediction
         """
         for FU in self.ALUIs:
             if FU.isBranchOutcomePending():
-                BID, outcome = FU.getBranchOutcome()
+                BID, outcome, _ = FU.getResult()
                 prediction = self.branch.predict(BID)
                 if outcome != prediction:
                     selfmispredictions.append(BID)
                     self.branchStalled = True
+                # Since we pulled the result, handle the ROB bookkeeping
+                dest = self.ROB.findAndUpdateEntry(BID, outcome)
+                self.RS_ALUIs.remove(BID)
 
 
     def memoryStage(self):
@@ -459,12 +501,25 @@ class Tomasulo:
             # Fetch Result
             result = winningFU.getResult()
 
-            # Update ROB results
-            dest = self.ROB.findAndUpdateEntry(*result[:-1])
+            print(f"Writing back {result}")
 
-            # Check if the ROB entry matches the RAT entry
-            if self.RAT.get(dest) == dest:
-                self.ARF.set(dest,result[1])
+            # Update ROB results
+            dest,name = self.ROB.findAndUpdateEntry(*result[:-1])
+
+            print(f"ROB Destination: {name}")
+
+
+            # Update Reservation Stations
+            self.RS_ALUIs.update(name, result[1])
+            self.RS_ALUFPs.update(name, result[1])
+            self.RS_MULTFPs.update(name, result[1])
+
+            # TODO update load/stores
+
+            # Free old reservation station(just blindly call)
+            self.RS_ALUIs.remove(result[0])
+            self.RS_ALUFPs.remove(result[0])
+            self.RS_MULTFPs.remove(result[0])
 
             # Update writeback cycle
             self.updateOutput(result[0], 3)
@@ -487,8 +542,9 @@ class Tomasulo:
                 if(self.RAT.get(result[1]) == result[4]):
                     self.RAT.set(result[1], result[1])
 
-                # Update ARF
-                self.ARF.set(result[1], result[2])
+                # Update ARF if this is not a branch
+                if not isinstance(result[2], bool):
+                    self.ARF.set(result[1], result[2])
 
                 # TODO issue store if necessary
 
@@ -497,6 +553,7 @@ class Tomasulo:
 
                 # Update commit cycle
                 self.updateOutput(resultID, 4)
+
 
 
     def usage():

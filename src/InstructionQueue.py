@@ -34,18 +34,24 @@ class InstructionQueue:
         temp = self.next + offset
         temp2 = self.nextID
         self.nextID += 1
-        self.next += (1 + offset)
+        self.next = temp + 1
         return [ temp2, self.instructions[temp] ]
 
 
-    def empty(self):
+    def empty(self, offset=0):
         """
         Determines if PC has reached the end of the instruction queue.
+        @param offset An optional integer representing the offset from the
+        current PC to investigate.
+        @return True if PC plus the offset is greater than the instruction
+        queue length, false otherwise
 
-        @return True if PC is greater than the instruction queue length, false
-        otherwise
+        Note: offset is used to handle a corner case where the last
+        instruction is a branch.  In this case, the branch offset can be used
+        to determine if the program is truly complete or if execution will
+        resume elsewhere.
         """
-        return self.next == len(self.instructions)
+        return (self.next + offset >= len(self.instructions))
 
 
     def dump(self):
@@ -59,14 +65,21 @@ class InstructionQueue:
                 print(f"PC->\t{i}\t\t{entry}")
             else:
                 print(f"\t{i}\t\t{entry}")
+        if self.next >= len(self.instructions):
+            print("PC->\n")
         print()
 
 
-    def peek(self):
+    def peek(self, offset=0):
         """
         Retrieve a copy of the next instruction type and its unique ID
+
+        @param offset An optional integer representing the offset from the
+        current PC to peek at
         """
-        return (int(self.nextID), self.instructions[self.next][0])
+        print(f"PEEK at next {self.next} with offset {offset}:{self.instructions[self.next + offset][0]}")
+        assert(self.next + offset >= 0)
+        return (int(self.nextID), self.instructions[self.next + offset][0])
 
 
 if __name__ == "__main__":

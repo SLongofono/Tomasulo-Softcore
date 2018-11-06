@@ -38,6 +38,8 @@ class ARF():
         @param key A string representing the register name to read from
         @return A numeric value representing the contents of the register
         """
+        if isinstance(key, int):
+            return key
         return self.reg[key]
 
 
@@ -62,6 +64,7 @@ class ARF():
             self.reg[key] = int(value)
         return True
 
+
     def dump(self):
         """
         Pretty-prints the contents of the ARF
@@ -81,6 +84,7 @@ class ARF():
             print(f"{keys[i].ljust(3,' ')}: {self.reg[keys[i]]:.6f}".ljust(40, ' '), end='')
             print(f"{keys[i+1].ljust(3,' ')}: {self.reg[keys[i+1]]:.6f}".ljust(40, ' '))
         print()
+
 
 # Test cases, run this script directly to execute
 if __name__ == "__main__":

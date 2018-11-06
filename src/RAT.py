@@ -24,7 +24,10 @@ class RAT():
         """
         ret = list(inst)
         ret[2] = self.reg[ret[2]]
-        ret[3] = self.reg[ret[3]]
+        
+        # If this is an immediate/branch instruction, leave the immediate in place
+        if not isinstance(ret[3], int):
+            ret[3] = self.reg[ret[3]]
         return tuple(ret)
 
 

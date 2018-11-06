@@ -53,14 +53,16 @@ class ROB():
         """
 
         found = None
-        for entry in self.q:
+        name = None
+        for i, entry in enumerate(self.q):
             if entry[ID] == entryID:
                 entry[VALUE] = value
                 entry[DONEFLAG] = True
                 found = entry[DEST]
+                name = f"ROB{i}"
                 break
 
-        return found
+        return found, name
 
 
     def add(self, entryID, destination):

@@ -7,11 +7,11 @@ class BranchUnit:
     achieve branch prediction and speculative execution.
     """
 
-    def __init__(self, maxRATCopies=10):
+    def __init__(self, maxCopies=10):
         """
         Constructor for the BranchUnit class
 
-        @param maxRATCopies An optional integer representing how many copies
+        @param maxCopies An optional integer representing how many copies
         of the RAT can be stored at any given time.  This effectively limits
         how many layers of branches can be executing under speculation.
 
@@ -19,10 +19,10 @@ class BranchUnit:
         system, as it will represent how deeply an execution path can go
         before requiring a base condition branch to be determined.
         """
-        self.maxCopies = maxRATCopies
+        self.maxCopies = maxCopies
         # Store copies of the RAT when prompted
         self.RATs = []
-        
+
         # The branch translation buffer
         self.BTB = {
             "000":True,
@@ -81,7 +81,7 @@ class BranchUnit:
         address = self.int2BinStr(ID)
         self.BTB[address] = taken
 
-    
+
     def saveRAT(self, ID, RATdict):
         """
         Given the current cycle, the ID of a branch instruction, and a copy of
@@ -95,7 +95,7 @@ class BranchUnit:
         It is assumed that a copy of the RAT state is passed in rather than a
         direct reference
         """
-        if len(self.RATs) < self.maxRATCopies:
+        if len(self.RATs) < self.maxCopies:
             self.RATs.append((ID, RATdict))
             return True
         return False

@@ -3,12 +3,13 @@
 
 #private constants for readability
 ID = 0
-OPERATION = 1
-TAG_I = 2
-TAG_J = 3
-VALUE_I = 4
-VALUE_J = 5
-EXECUTING = 6
+DEST = 1
+OPERATION = 2
+TAG_I = 3
+TAG_J = 4
+VALUE_I = 5
+VALUE_J = 6
+EXECUTING = 7
 
 class ReservationStation:
     """
@@ -33,7 +34,7 @@ class ReservationStation:
         return len(self.q) == self.size
 
 
-    def add(self, instructionID, op, Qi, Qj, Vi, Vj):
+    def add(self, instructionID, dest, op, Qi, Qj, Vi, Vj):
         """
         Adds a new entry to the end of the RS
 
@@ -56,7 +57,7 @@ class ReservationStation:
         be executing any given instruction, we include a flag at the end to
         designate those that are being executed.
         """
-        self.q.append( [instructionID, op, Qi, Qj, Vi, Vj, False] )
+        self.q.append( [instructionID, dest, op, Qi, Qj, Vi, Vj, False] )
 
 
     def markAsExecuting(self, instructionID):
@@ -100,11 +101,17 @@ class ReservationStation:
         """
         for entry in self.q:
             if entry[TAG_I] == tag:
+                print(f"FOUND TAG {tag}")
                 entry[TAG_I] = None
                 entry[VALUE_I] = value
+            else:
+                print(f"NO MATCH TAG {tag}")
             if entry[TAG_J] == tag:
+                print(f"FOUND TAG {tag}")
                 entry[TAG_J] = None
                 entry[VALUE_J] = value
+            else:
+                print(f"NO MATCH TAG {tag}")
 
 
     def dump(self):
@@ -112,12 +119,12 @@ class ReservationStation:
         Pretty-prints the RS contents
         """
         print("Reservation Station".ljust(48, '=').rjust(80, '='))
-        print("Index\tID\tOperation\tQi\tQj\tVi\tVj")
+        print("Index\tID\tDest\tOperation\tQi\tQj\tVi\tVj")
         if len(self.q) < 1:
             print("\t[ empty ]")
 	#I think here should be an else
         for idx, entry in enumerate(self.q):
-            print(f"{idx}\t{entry[ID]}\t{entry[OPERATION]}\t\t{entry[TAG_I]}\t{entry[TAG_J]}\t{entry[VALUE_I]}\t{entry[VALUE_J]}")
+            print(f"{idx}\t{entry[ID]}\t{entry[DEST]}\t{entry[OPERATION]}\t\t{entry[TAG_I]}\t{entry[TAG_J]}\t{entry[VALUE_I]}\t{entry[VALUE_J]}")
         print()
 
 

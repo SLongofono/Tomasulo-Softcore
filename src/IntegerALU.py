@@ -92,7 +92,9 @@ class IntegerALU:
         """
         Check if the next result is a branch outcome
         """
-        return self.buffer[0][2]
+        if len(self.buffer) > 0:
+            return self.buffer[0][2]
+        return False
 
 
     def getResult(self):
