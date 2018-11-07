@@ -5,8 +5,14 @@ FP multiplier 2 20    1
 Load/store unit 3 1 4 1
 ROB entries = 128
 CDB buffer entries = 1
-R1=10,R2=20,R3=30,F2=30.1
-Mem[4]=1,Mem[8]=2,Mem[12]=3.4
+R1=4,R2=20,R3=16,F2=30.1
+Mem[0]=1.01,Mem[4]=2.01,Mem[8]=3.01,Mem[12]=4.01
 
-ADD R1,R2,R3
-SUB R4,R2,R3
+ADD.D F2,F0,F0
+ADD R2,R0,R0
+LD F1,0(R2)
+ADDI R2,R2,4
+ADDI R1,R1,-1
+ADD.D F2,F2,F1
+BNE R0,R1,-5
+SD F2,0(R3)
