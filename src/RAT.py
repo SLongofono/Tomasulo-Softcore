@@ -24,7 +24,9 @@ class RAT():
         """
         ret = list(inst)
         ret[2] = self.reg[ret[2]]
-        ret[3] = self.reg[ret[3]]
+        # if this is not a register name, leave it unchanged
+        if not isinstance(ret[3], int): 
+            ret[3] = self.reg[ret[3]]
         return tuple(ret)
 
 

@@ -429,8 +429,9 @@ class Tomasulo:
             if not FU.busy():
                 FU.execute( ready_ALUIs[curPos][0],
                             ready_ALUIs[curPos][2],
-                            ready_ALUIs[curPos][5],
-                            ready_ALUIs[curPos][6])
+                            int(ready_ALUIs[curPos][5]),
+                            int(ready_ALUIs[curPos][6])
+                )
                 self.updateOutput(ready_ALUIs[curPos][0], 1)
                 markAsExecuting.append(ready_ALUIs[curPos][0])
                 curPos += 1

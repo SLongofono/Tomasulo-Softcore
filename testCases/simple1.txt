@@ -10,3 +10,4 @@ Mem[4]=1,Mem[8]=2,Mem[12]=3.4
 
 ADD R1,R2,R3
 SUB R4,R2,R3
+ADDI R5,R0,99
