@@ -1,6 +1,7 @@
 \documentclass[12pt]{article}
 \usepackage{lingmacros}
 \usepackage{tree-dvips}
+\usepackage[a4 paper, margin=0.5in]{geometry}
 \title{Tomasulo-Softcore Library}
 \author{Yihao Liu \& Stephen Longofono}
 \begin{document}
@@ -319,7 +320,7 @@ This test case was designed to test our model of system memory (RAM).  Here, we 
 \end{verbatim}
 
 \subsection{complex7.txt}
-This final test case was designed to show that our system can do real work.  We execute a recursive version of a Fibonacci numbers procedure to induce a deep chain of RAW dependencies.
+This final test case was designed to show that our system can do real work.  We execute a sum over some data in memory to induce a chain of dependencies and memory latencies.
 
 \subsubsection*{Input}
 \begin{verbatim}
