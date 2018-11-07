@@ -1,6 +1,6 @@
   # of rs Cycles in EX  Cycles in Mem # of FUs
 Integer adder 2 1   1
-FP adder  3 3   1
+FP adder  3 3   2
 FP multiplier 2 20    1
 Load/store unit 3 1 4 1
 ROB entries = 128
