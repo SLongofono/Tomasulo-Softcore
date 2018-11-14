@@ -118,6 +118,34 @@ class ROB():
         return tuple(retVal)
 
 
+    def purgeAfterMispredict(self, branchID):
+        """
+        Given the instruction ID of a mispredicted branch, clears all entries
+        which came after that branch.
+
+        @param branchID An integer representing the mispredicted branch instruction
+
+        Note: since the internal queue is circular, removing entries is as
+        simple as setting their DONEFLAG entry to True and backing up the tail
+        pointer
+        """
+        print("CLEANING ROB...")
+        print(f"SEARCHING FOR ID {ID}...")
+        branchPos = self.head
+        while self.q[branchPos][ID] != branchID:
+            print(f"CHECKING {self.q[branchPos][ID]}...")
+            branchPos += 1
+            assert(branchPos != self.tail)
+
+        pos = branchPos + 1
+
+        while pos < self.tail:
+            self.q[pos][DONEFLAG] = True
+            pos += 1
+
+        self.tail = branchPos + 1
+
+
     def dump(self):
         """
         Pretty-prints the ROB contents

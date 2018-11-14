@@ -85,6 +85,19 @@ class ReservationStation:
                 return True
         return False
 
+    def purgeAfterMispredict(self, instructionID):
+        """
+        Given an instruction ID, removes all entries with newer instruction
+        IDs (greater in value, since they are strictly increasing)
+
+        @param instructionID An integer representing the mispredicted branch
+        instruction ID
+        @return None
+        """
+        dead = [ i for i, entry in enumerate(self.q) if entry[ID] > instructionID  ]
+        for deadEntry in dead:
+            self.q.pop(deadEntry)
+
 
     def update(self, tag, value):
         """

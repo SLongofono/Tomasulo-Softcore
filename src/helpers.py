@@ -36,7 +36,7 @@ def getParameters(inputFileName):
                     addr = int(temp[0][temp[0].find('[')+1:-1])
 
                     # Always store bytes in case the input is a mix of byte and word addresses
-                    if not (addr % 4):
+                    if addr % 4:
                         addr = 4 * addr
 
                     try:

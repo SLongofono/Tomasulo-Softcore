@@ -82,6 +82,16 @@ class InstructionQueue:
         return (int(self.nextID), self.instructions[self.next + offset][0])
 
 
+    def setPC(self, PC):
+        """
+        Overrides the current PC to the given PC
+
+        @param PC A non-negative integer representing the new PC
+        @return None
+        """
+        self.next = PC
+
+
 if __name__ == "__main__":
     insts = [
         ("ADD", "R1", "R2", "R3"),

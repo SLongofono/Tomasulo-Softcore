@@ -113,43 +113,32 @@ class Tomasulo:
             self.RS_ALUIs.dump()
             self.ROB.dump()
 
-            if self.branchStalled:
-                # Recover RAT and associated branch instruction ID
-                # Clear RS for speculative instructions
-                # Clear ROB entries after branch
-                # Update fetch offset per true branch outcome
-                # Update branch outcome in branch unit
-                print("Stalled due to branch misprediction")
-                self.branchStalled = False
-                self.advanceTime()
+            # Try to issue new instructions
+            print("ISSUE")
+            self.issueStage()
 
-            else:
-                # Try to issue new instructions
-                print("ISSUE")
-                self.issueStage()
+            # Try to execute ready instructions
+            print("EXECUTE")
+            self.executeStage()
 
-                # Try to execute ready instructions
-                print("EXECUTE")
-                self.executeStage()
+            # Gather and process any branch outcomes
+            print("BRANCHCHECK")
+            self.checkBranchStage()
 
-                # Gather and process any branch outcomes for the next cycle
-                print("BRANCHCHECK")
-                self.checkBranchStage()
+            # Try to write back load results
+            print("MEMORY")
+            self.memoryStage()
 
-                # Try to write back load results
-                print("MEMORY")
-                self.memoryStage()
+            # Try to write back FU results
+            print("WRITEBACK")
+            self.writebackStage()
 
-                # Try to write back FU results
-                print("WRITEBACK")
-                self.writebackStage()
+            # Try to commit
+            print("COMMIT")
+            self.commitStage()
 
-                # Try to commit
-                print("COMMIT")
-                self.commitStage()
-
-                # Advance time
-                self.advanceTime()
+            # Advance time
+            self.advanceTime()
 
             if(self.cycle == 8):
                 break
@@ -243,7 +232,7 @@ class Tomasulo:
             # write the nonzero sections of memory
             outFile.write("Memory Unit".ljust(48, '=').rjust(80,'='))
             outFile.write('\n')
-            entries = [(str(i),x) for i,x in enumerate(self.memory.memory) if x != 0.0]
+            entries = [(str(i),x) for i,x in enumerate(self.memory.memory) if ((x > 0.0) or (x < 0.0)) ]
             newLine = False
             for address, contents in entries:
                 outFile.write(f"Word {address.rjust(2,'0')}: {contents:.6f} ".ljust(40,' '))
@@ -321,9 +310,13 @@ class Tomasulo:
                             # update global fetch offset to branch target
                             self.fetchOffset = int(nextInst[1][3])
                             print(f"BRANCH, updating offset to {self.fetchOffset}")
+                            # store PC in case of misprediction
+                            self.branch.setMispredictTarget(nextInst[0],self.IQ.next)
                         else:
                             self.fetchOffset = 0
                             print(f"BRANCH, updating offset to {self.fetchOffset}")
+                            # store target in case of misprediction
+                            self.branch.setMispredictTarget(nextInst[0], self.IQ.next + int(nextInst[1][3]))
                 else:
                     return
             else:
@@ -482,8 +475,37 @@ class Tomasulo:
                 BID, outcome, _ = FU.getResult()
                 prediction = self.branch.predict(BID)
                 if outcome != prediction:
+                    # signal branch rollback
                     self.mispredictions.append(BID)
                     self.branchStalled = True
+                    print(f"BRANCH MISPREDICTION, INSTRUCTION {BID}")
+
+                    # Recover RAT and associated branch instruction ID
+                    self.RAT.reg = self.branch.rollBack(BID)
+
+                    # Clear RS for speculative instructions
+                    self.RS_ALUIs.purgeAfterMispredict(BID)
+                    self.RS_ALUFPs.purgeAfterMispredict(BID)
+                    self.RS_MULTFPs.purgeAfterMispredict(BID)
+
+                    # Clear ROB entries after branch
+                    self.ROB.purgeAfterMispredict(BID)
+
+                    # Update fetch offset and PC per true branch outcome
+                    self.IQ.setPC(self.branch.getMispredictTarget(BID))
+                    self.fetchOffset = 0
+
+                    # Update branch outcome in branch unit
+                    if prediction:
+                        self.branch.update(BID, False)
+                    else:
+                        self.branch.update(BID, True)
+
+                    # Purge speculations from output
+                    dead = [x for x in self.output.keys() if x > BID]
+                    for deadEntry in dead:
+                        del self.output[deadEntry]
+
                 # Since we pulled the result, handle the ROB bookkeeping
                 dest = self.ROB.findAndUpdateEntry(BID, outcome)
                 self.RS_ALUIs.remove(BID)
@@ -557,6 +579,8 @@ class Tomasulo:
 
                 # Reference ID, destination, value, doneflag, ROB#
                 result = self.ROB.commit()
+
+                print("ROB returned: ",result)
 
                 # Check if the RAT should be updated
                 if(self.RAT.get(result[1]) == result[4]):

@@ -22,6 +22,7 @@ class BranchUnit:
         self.maxCopies = maxCopies
         # Store copies of the RAT when prompted
         self.RATs = []
+        self.mispredictedTargets = {}
 
         # The branch translation buffer
         self.BTB = {
@@ -81,6 +82,31 @@ class BranchUnit:
         address = self.int2BinStr(ID)
         self.BTB[address] = taken
 
+    def setMispredictTarget(self, ID, PC):
+        """
+        Saves an instruction ID and offset pair in case the branch prediction is
+        wrong.
+
+        @param ID An integer representing the branch instruction
+        @param PC An integer representing the PC to use if the branch is
+        mispredicted.
+        @return None
+        """
+        self.mispredictedTargets[ID] = PC
+
+
+    def getMispredictTarget(self, ID):
+        """
+        Given the ID of a mispredicted branch instruction, returns the PC to
+        use, assuming it was previously set.
+
+        @param ID An integer representing the branch instruction that was
+        mispredicted
+        @return an integer representing the PC stored for the given branch
+        """
+        return self.mispredictedTargets[ID]
+
+
 
     def saveRAT(self, ID, RATdict):
         """
@@ -125,7 +151,7 @@ class BranchUnit:
         self.RATs = self.RATs[:idx+1]
 
         # Return the state at the time of speculation
-        return self.RATS.pop(idx)
+        return self.RATs.pop(idx)[1]
 
 
     def dump(self):
