@@ -12,6 +12,7 @@ class St_queue:
 		@param size An integer representing the maximum amount of entries
 		for this st queue
 		@param buffer A list representing the output buffer
+		@param q A list representing the store queue
 		'''
 		self.size = size
 		self.q = []
@@ -56,12 +57,19 @@ class St_queue:
 				entry[3] = None
 				entry[2] = value
 
+	def check(self):
+		output = ()
+		for i in range(len(self.q)):
+			if self.q[i][3] == None:
+				return self.q.pop(i)
+		return output
+
 	def advanceTime(self):
 		self.time += 1
-		for entry in self.q:
-			if entry[3] == None:
-				self.buffer.append( (entry[0], entry[1], entry[2]) )
-				remove(entry[0])
+		entry = self.check()
+		while(entry != ()):
+			self.buffer.append( (entry[0], entry[1], entry[2]) )
+			entry = self.check()
 
 	def isResultReady(self):
 		return len(self.buffer) > 0
@@ -115,9 +123,19 @@ class Ld_queue:
 			if self.q[i][0] == instr:
 				self.q.pop(i)
 
+	def check(self):
+		for i in range(len(self.q)):
+				return self.q.pop(i)
+		return None
+
 	def advanceTime(self):
 		self.time += 1
 		#TODO: forwarding from a store
+		entry = None
+		entry = self.check()
+		while(entry != None):
+			self.buffer.append( (entry[0], entry[1]) )
+			entry = self.check()
 
 	def isResultReady(self):
 		return len(self.buffer) > 0
@@ -133,3 +151,27 @@ class Ld_queue:
 			for entry in self.q:
 				print("{}\t{}\t".format(entry[0],entry[1]))
 		print()
+
+if __name__ == "__main__":
+	st = St_queue(5)
+	ld = Ld_queue(5)
+	'''
+	ld.add(1,0x20)
+	ld.advanceTime()
+	print(f"Result ready?:{ld.isResultReady()}")
+	ld.add(2,0x30)
+	ld.advanceTime()
+	ld.add(3,0x20)
+	ld.advanceTime()
+	ld.dump()
+	print(f"Result ready?:{ld.isResultReady()}")
+	'''
+	st.add(1,0x20,0,None)
+	st.advanceTime()
+	print(f"Result ready?:{st.isResultReady()}")
+	st.add(2,0x30,0,None)
+	st.advanceTime()
+	st.add(3,0x20,0,None)
+	st.advanceTime()
+	st.dump()
+	print(f"Result ready?:{st.isResultReady()}")

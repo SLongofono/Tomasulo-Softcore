@@ -5,8 +5,6 @@ class MemoryUnit:
     """
     This class implements a single-ported 256B memory Unit
     """
-
-
     def __init__(self):
         """
         Constructor for the memory unit
@@ -20,7 +18,6 @@ class MemoryUnit:
         self.memory = [0] * 64
         self.flag = [0] * 64
         self.memory_max_length = 256
-
 
     def mem_write(self, addr, value):
         """
@@ -47,7 +44,6 @@ class MemoryUnit:
                 self.memory[int(addr/4)] = value
                 self.flag[int(addr/4)] = 1
                 self.flag[int(addr/4)] = -1
-
 
     def mem_read(self, addr):
         return self.memory[int(addr/4)]
