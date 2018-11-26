@@ -10,6 +10,7 @@ from src.BranchUnit import BranchUnit
 from src.MemoryUnit import MemoryUnit
 from src.RAT import RAT
 from src.ARF import ARF
+import src.FPALU
 
 class Tomasulo:
     """
@@ -57,11 +58,13 @@ class Tomasulo:
             # Integer ALUs
             self.ALUIs = [IntegerALU(1,1) for i in range(self.Params["ALUI"][-1])]
 
-            # FP ALUs TODO
-            self.ALUFPs = []
+            # FP Adder
+			#TO DO:get latency information from file
+			latency = {"ADD.d":5, "SUB.d":5, "MUL.d":8}
+            self.ALUFPs = [FPAdder(latency,1,3) for i in range(self.Params["ALUFP"])]
 
-            # FP Multipliers TODO
-            self.MULTFPs = []
+            # FP Multipliers 
+            self.MULTFPs = [FPMultiplier(latency,1,3) for i in range(self.Params["MULTFP"])]
 
             # Instatiate Memory
             self.memory = MemoryUnit()
