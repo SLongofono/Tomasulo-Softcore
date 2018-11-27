@@ -27,7 +27,7 @@ To test individual modules in the src directory, run them directly as scripts:
 - [x] RAT class
 - [x] Integer ALU class
 - [x] FP Adder class
-- [ ] FP Multiplier class
+- [x] FP Multiplier class
 - [x] Instruction Queue class
 - [x] Branch Unit class
 - [x] Memory Unit class
@@ -46,7 +46,7 @@ To test individual modules in the src directory, run them directly as scripts:
 - [ ] Simple ISA test case: FPALU end-to-end
 - [ ] Simple ISA test case: FP Multiplier end-to-end
 - [ ] Simple ISA test case: Load/Store end-to-end
-- [ ] Simple ISA test case: Branch end-to-end
+- [x] Simple ISA test case: Branch end-to-end
 - [ ] Addressing corner cases test
 - [ ] Verify absence of WAW test case
 - [ ] Verify absence of WAR test case
@@ -61,21 +61,10 @@ To test individual modules in the src directory, run them directly as scripts:
 - [ ] Complex test case: write patterns to memory
 - [ ] Complex test case: Fibonacci numbers recursive
 
-## Stretch Goals
-- [ ] Implement all operands as binary numbers
-- [ ] Implement all instructions as binary numbers
-- [ ] Implement true addressing
-- [ ] Implement virtual addressing
-- [ ] Extend FP multiplier to divide
-- [ ] Assemble profiles with latencies of functional units in common architectures
-- [ ] Add support for pseudo-instructions
-- [ ] Implement remaining MIPS ISA
-- [ ] Add exceptions handling
-
 # Project Requirements
 [See here](rubric.md)
 
 # Description of Operation
 Our software hierarchy is depicted below in the UML diagram.  To handle the requirement that some functional units are pipelined and others are not, we replicate time-tracking in the subclasses and functional units; cycles are counted and incremented by the top-level Tomasulo class, and for functional units that have time sensitive actions, an advanceTime() function is used to progress by one time unit.
 
-![The class hierarchy UML of the Tomasulo-Softcore](UML/Hierarchy.png)
+![The class hierarchy UML of the Tomasulo-Softcore](documentation/UML/Hierarchy.png)
