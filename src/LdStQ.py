@@ -1,7 +1,7 @@
-# @file         Ld_st_queue.py
-# @authors      Yihao
+# @file		 LdStQ.py
+# @authors	  Yihao
 
-class St_queue:
+class StQ:
 	'''
 	This class implements a generic load queue
 	'''
@@ -35,7 +35,7 @@ class St_queue:
 		@param value_tag A string reprenting the ROB entry tag where the value
 		to be stored
 		'''
-		self.q.append([instr, addr, value, value_tag])
+		self.q.append([instr, addr, value, value_tag, False])
 
 	def remove(self, instr):
 		for i in len(self.q):
@@ -87,7 +87,7 @@ class St_queue:
 		print()
 
 	
-class Ld_queue:
+class LdQ:
 	'''
 	This class implements a generic load queue
 	'''
@@ -116,7 +116,7 @@ class Ld_queue:
 		@param instr An integar representing the instruction id
 		@param addr An integar representing the address to be operated by memory
 		'''
-		self.q.append([instr, addr])
+		self.q.append([instr, addr, False])
 
 	def remove(self, instr):
 		for i in len(self.q):
@@ -152,26 +152,6 @@ class Ld_queue:
 				print("{}\t{}\t".format(entry[0],entry[1]))
 		print()
 
-if __name__ == "__main__":
-	st = St_queue(5)
-	ld = Ld_queue(5)
-	'''
-	ld.add(1,0x20)
-	ld.advanceTime()
-	print(f"Result ready?:{ld.isResultReady()}")
-	ld.add(2,0x30)
-	ld.advanceTime()
-	ld.add(3,0x20)
-	ld.advanceTime()
-	ld.dump()
-	print(f"Result ready?:{ld.isResultReady()}")
-	'''
-	st.add(1,0x20,0,None)
-	st.advanceTime()
-	print(f"Result ready?:{st.isResultReady()}")
-	st.add(2,0x30,0,None)
-	st.advanceTime()
-	st.add(3,0x20,0,None)
-	st.advanceTime()
-	st.dump()
-	print(f"Result ready?:{st.isResultReady()}")
+if __name__ == "main":
+	st = StQ(5)
+	ld = LdQ(5)

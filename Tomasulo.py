@@ -10,6 +10,7 @@ from src.BranchUnit import BranchUnit
 from src.MemoryUnit import MemoryUnit
 from src.RAT import RAT
 from src.ARF import ARF
+from src.LdStQ import StQ, LdQ
 import src.FPALU
 
 class Tomasulo:
@@ -40,8 +41,12 @@ class Tomasulo:
             # Track completion record for output
             self.output = {}
 
-             # Instantiate Instruction Queue
+            # Instantiate Instruction Queue
             self.IQ = InstructionQueue(self.Params["Instructions"])
+
+			#Instantiate Load and Store Queue
+			self.LDQs = LdQ(self.Params["LoadStoreUnit"][0]) 
+			self.STQs = StQ(self.Params["LoadStoreUnit"][0]) 
 
             # Instantiate ROB, RAT, ARF
             self.ROB = ROB(self.Params["ROBEntries"])
@@ -53,14 +58,17 @@ class Tomasulo:
             self.RS_ALUFPs = ReservationStation(self.Params["ALUFP"][0])
             self.RS_MULTFPs = ReservationStation(self.Params["MULTFP"][0])
 
-
             # Instantiate FUs
             # Integer ALUs
             self.ALUIs = [IntegerALU(1,1) for i in range(self.Params["ALUI"][-1])]
 
+            # Get latency of FP Unit from file
+			latency = {}
+			latency["MUL.d"] = self.Params["MULTFP"][1]
+			latency["ADD.d"] = self.Params["ALUFP"][1]
+			latency["SUB.d"] = self.Params["ALUFP"][1]
+			
             # FP Adder
-			#TO DO:get latency information from file
-			latency = {"ADD.d":5, "SUB.d":5, "MUL.d":8}
             self.ALUFPs = [FPAdder(latency,1,3) for i in range(self.Params["ALUFP"])]
 
             # FP Multipliers 
@@ -161,7 +169,10 @@ class Tomasulo:
             FU.advanceTime()
         for FU in self.MULTFPs:
             FU.advanceTime()
-
+        for FU in self.LDQs:
+            FU.advanceTime()
+        for FU in self.STQs:
+            FU.advanceTime()
 
     def updateOutput(self, ID, stage):
         """
@@ -281,8 +292,15 @@ class Tomasulo:
 
             # Check that the relevant RS is not full
             # Fetch actual instruction
-            if (nextName == "LD") or (nextName == "SD"):
-                if not self.memory.q.isFull():
+            if (nextName == "LD"):
+                if not self.LDQs.isFull():
+                    nextInst = self.IQ.fetch(offset=self.fetchOffset)
+                    self.fetchOffset = 0
+                    # TODO Add in memory-specific issue handling here
+                return
+
+            elif (nextName == "SD"):
+                if not self.STQs.isFull():
                     nextInst = self.IQ.fetch(offset=self.fetchOffset)
                     self.fetchOffset = 0
                     # TODO Add in memory-specific issue handling here
@@ -412,7 +430,10 @@ class Tomasulo:
                                                            (x[6] is not None) and
                                                            (not x[7]) and
                                                            (not self.isTooNew(x[0])))]
-        #TODO ready_LoadStore = []
+        ready_Ld = [x for x in self.LDQs if ( (not x[3]) and (not self.isTooNew(x[0])))]
+        ready_St = [x for x in self.STQs if ( (x[3] is not None) and 
+											(not x[4]) 
+											and (not self.isTooNew(x[0])))]
 
         # Mark executed instructions for cleanup
         markAsExecuting = []
