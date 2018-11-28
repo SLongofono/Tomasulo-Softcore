@@ -120,8 +120,12 @@ class Tomasulo:
             # Log state
             #self.dump()
             self.IQ.dump()
+			self.LDQs.dump()
+			self.STQs.dump()
             self.ALUIs[0].dump()
             self.RS_ALUIs.dump()
+			self.RS_ALUFPs.dump()
+			self.RS_MULTFPs.dump()
             self.ROB.dump()
 
             # Try to issue new instructions
@@ -432,8 +436,8 @@ class Tomasulo:
                                                            (not self.isTooNew(x[0])))]
         ready_Ld = [x for x in self.LDQs if ( (not x[3]) and (not self.isTooNew(x[0])))]
         ready_St = [x for x in self.STQs if ( (x[3] is not None) and 
-											(not x[4]) 
-											and (not self.isTooNew(x[0])))]
+                                            (not x[4]) 
+                                             and (not self.isTooNew(x[0])))]
 
         # Mark executed instructions for cleanup
         markAsExecuting = []
@@ -453,40 +457,37 @@ class Tomasulo:
                 markAsExecuting.append(ready_ALUIs[curPos][0])
                 curPos += 1
 
-        # TODO uncomment once these classes are done
-        #curPos = 0
-        #for i, FU in enumerate(self.ALUFPs):
-        #    if curPos >= len(ready_ALUFPs):
-        #        break
-        #    if not FU.busy():
-        #        FU.execute( ready_ALUFPs[curPos].q[0],
-        #                    ready_ALUFPs[curPos].q[1],
-        #                    ready_ALUFPs[curPos].q[4],
-        #                    ready_ALUFPs[curPos].q[5])
-        #        self.updateOutput(ready_ALUFPs[curPos].q[0], 1)
-        #        markAsExecuting.append(ready_ALUIs[curPos][0])
-        #        curPos += 1
+        curPos = 0
+        for i, FU in enumerate(self.ALUFPs):
+            if curPos >= len(ready_ALUFPs):
+                break
+            if not FU.busy():
+                FU.execute( ready_ALUFPs[curPos].q[0],
+                            ready_ALUFPs[curPos].q[1],
+                            ready_ALUFPs[curPos].q[4],
+                            ready_ALUFPs[curPos].q[5])
+                self.updateOutput(ready_ALUFPs[curPos].q[0], 1)
+                markAsExecuting.append(ready_ALUIs[curPos][0])
+                curPos += 1
 
-        # TODO uncomment once these classes are done
-        #curPos = 0
-        #for i, FU in enumerate(self.MULTFPs):
-        #    if curPos >= len(ready_MULTFPs):
-        #        break
-        #    if not FU.busy():
-        #        FU.execute( ready_MULTFPs[curPos].q[0],
-        #                    ready_MULTFPs[curPos].q[1],
-        #                    ready_MULTFPs[curPos].q[4],
-        #                    ready_MULTFPs[curPos].q[5])
-        #        self.updateOutput(ready_MULTFPs[curPos].q[0], 1)
-        #        markAsExecuting.append(ready_ALUIs[curPos][0])
-        #        curPos += 1
+        curPos = 0
+        for i, FU in enumerate(self.MULTFPs):
+            if curPos >= len(ready_MULTFPs):
+                break
+            if not FU.busy():
+                FU.execute( ready_MULTFPs[curPos].q[0],
+                            ready_MULTFPs[curPos].q[1],
+                            ready_MULTFPs[curPos].q[4],
+                            ready_MULTFPs[curPos].q[5])
+                self.updateOutput(ready_MULTFPs[curPos].q[0], 1)
+                markAsExecuting.append(ready_ALUIs[curPos][0])
+                curPos += 1
 
         for item in markAsExecuting:
             # Don't check, just blindly call since IDs are unique
             self.RS_ALUIs.markAsExecuting(item)
-            # TODO uncomment once these classes are done
-            #self.RS_ALUFPs.markAsExecuting(item)
-            #self.RS_MULTFP.markAsExecuting(item)
+            self.RS_ALUFPs.markAsExecuting(item)
+            self.RS_MULTFP.markAsExecuting(item)
 
 
     def checkBranchStage(self):
