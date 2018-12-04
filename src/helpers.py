@@ -107,7 +107,6 @@ def parseInstructions(rawInstructions):
             name = raw[:3]
             temp = raw[3:].strip().split(',')
             temp.insert(0, name)
-            print(temp)
             results.append( tuple(temp) )
 
     return results

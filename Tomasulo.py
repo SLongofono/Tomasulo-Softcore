@@ -298,16 +298,20 @@ class Tomasulo:
             # Fetch actual instruction
             if (nextName == "LD"):
                 if not self.LDQs.isFull():
+					tmp = nextInst
                     nextInst = self.IQ.fetch(offset=self.fetchOffset)
                     self.fetchOffset = 0
-                    # TODO Add in memory-specific issue handling here
+					#forwarding
+					ldAddr = nextInst[1][2] + nextInst[1][3]
+					if (self.STQs.check_forward(ldAddr) == True): 
+						#hang up when detecting a forward problem
+						nextInst = tmp
                 return
 
             elif (nextName == "SD"):
                 if not self.STQs.isFull():
                     nextInst = self.IQ.fetch(offset=self.fetchOffset)
                     self.fetchOffset = 0
-                    # TODO Add in memory-specific issue handling here
                 return
 
             elif (nextName == "ADD.D") or (nextName == "SUB.D"):

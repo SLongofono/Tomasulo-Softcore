@@ -36,6 +36,17 @@ class StQ:
 		to be stored
 		'''
 		self.q.append([instr, addr, value, value_tag, False])
+	
+	def check_forward(addr):
+		'''
+		Check if there is a forwarding problem while loading
+		
+		@param addr An integar representing the source address of ld 
+		'''
+		for i in self.q:
+			if i[1] == addr:
+				return True
+		return False
 
 	def remove(self, instr):
 		for i in len(self.q):
@@ -93,7 +104,7 @@ class LdQ:
 	'''
 	def __init__(self, size):
 		'''
-		Conldructor for the Ld queue class
+		Constructor for the Ld queue class
 
 		@param size An integer representing the maximum amount of entries
 		for this ld queue
