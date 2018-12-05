@@ -5,14 +5,13 @@ class MemoryUnit:
 	"""
 	This class implements a single-ported 256B memory Unit
 	"""
-	def __init__(self, size):
+	def __init__(self):
 		"""
 		Constructor for the memory unit
 
 		@param memory A list representing the memory unit for each word
 		@param flag A list representing if the corresponding word address is taken by float value
 		@param memory_max_length An integar representing the maximum length of the memory byte address
-		@param size An integer representing the size of load and store queue
 		"""
 		self.memory = [0] * 64
 		self.flag = [0] * 64
