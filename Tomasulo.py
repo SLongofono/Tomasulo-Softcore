@@ -27,7 +27,6 @@ class Tomasulo:
     myTomasuloObject = Tomasulo(myInputFileName)
     """
 
-
     def __init__(self, inputFileName):
         print("Initialization")
         try:
@@ -65,9 +64,9 @@ class Tomasulo:
 
             # Get latency of FP Unit from file
             latency = {}
-            latency["MUL.d"] = self.Params["MULTFP"][1]
-            latency["ADD.d"] = self.Params["ALUFP"][1]
-            latency["SUB.d"] = self.Params["ALUFP"][1]
+            latency["MULT.D"] = self.Params["MULTFP"][1]
+            latency["ADD.D"] = self.Params["ALUFP"][1]
+            latency["SUB.D"] = self.Params["ALUFP"][1]
 
             # FP Adder
             self.ALUFPs = [FPAdder(latency,1,3) for i in range(self.Params["ALUFP"][-1])]
@@ -156,7 +155,9 @@ class Tomasulo:
             # Advance time
             self.advanceTime()
 
-            if(self.cycle == 8):
+            # TODO We need to figure out the termination condition.  Probably equivalent
+            # to at the end of the instruction queue and all reservation stations empty
+            if(self.cycle == 100):
                 break
 
         self.writeOutput()
@@ -408,7 +409,7 @@ class Tomasulo:
             self.RAT.dump()
 
             # Add the entry to the RS
-            if(nextName == "ADD.D"):
+            if(nextName == "ADD.D" or nextName == "SUB.D"):
                 self.RS_ALUFPs.add(*entry)
             elif(nextName == "MULT.D"):
                 self.RS_MULTFPs.add(*entry)
@@ -445,6 +446,7 @@ class Tomasulo:
                                              (not x[4]) and
                                              (not self.isNew(x[0])))]
 
+
         # Mark executed instructions for cleanup
         markAsExecuting = []
 
@@ -468,12 +470,12 @@ class Tomasulo:
             if curPos >= len(ready_ALUFPs):
                 break
             if not FU.busy():
-                FU.execute( ready_ALUFPs[curPos].q[0],
-                            ready_ALUFPs[curPos].q[1],
-                            ready_ALUFPs[curPos].q[4],
-                            ready_ALUFPs[curPos].q[5])
-                self.updateOutput(ready_ALUFPs[curPos].q[0], 1)
-                markAsExecuting.append(ready_ALUIs[curPos][0])
+                FU.execute( ready_ALUFPs[curPos][0],
+                            ready_ALUFPs[curPos][2],
+                            ready_ALUFPs[curPos][5],
+                            ready_ALUFPs[curPos][6])
+                self.updateOutput(ready_ALUFPs[curPos][0], 1)
+                markAsExecuting.append(ready_ALUFPs[curPos][0])
                 curPos += 1
 
         curPos = 0
@@ -481,12 +483,12 @@ class Tomasulo:
             if curPos >= len(ready_MULTFPs):
                 break
             if not FU.busy():
-                FU.execute( ready_MULTFPs[curPos].q[0],
-                            ready_MULTFPs[curPos].q[1],
-                            ready_MULTFPs[curPos].q[4],
-                            ready_MULTFPs[curPos].q[5])
-                self.updateOutput(ready_MULTFPs[curPos].q[0], 1)
-                markAsExecuting.append(ready_ALUIs[curPos][0])
+                FU.execute( ready_MULTFPs[curPos][0],
+                            ready_MULTFPs[curPos][2],
+                            ready_MULTFPs[curPos][5],
+                            ready_MULTFPs[curPos][6])
+                self.updateOutput(ready_MULTFPs[curPos][0], 1)
+                markAsExecuting.append(ready_MULTFPs[curPos][0])
                 curPos += 1
 
         for item in markAsExecuting:
@@ -544,7 +546,7 @@ class Tomasulo:
 
     def memoryStage(self):
         """
-        Cues the memory module to perform any queued LD instructions and
+        Cues the memory module to perform any queued LD/ST instructions and
         update its output buffer
         """
         pass
@@ -568,7 +570,21 @@ class Tomasulo:
                     oldestInst = temp
                     winningFU = FU
 
-        # TODO add in same check over the ALUFPs, MULTFPs
+        if winningFU is None:
+            for FU in self.ALUFPs:
+                if FU.isResultReady():
+                    temp = FU.getResultID()
+                    if temp < oldestInst:
+                        oldestInst = temp
+                        winningFU = FU
+
+        if winningFU is None:
+            for FU in self.MULTFPs:
+                if FU.isResultReady():
+                    temp = FU.getResultID()
+                    if temp < oldestInst:
+                        oldestInst = temp
+                        winningFU = FU
 
         if winningFU is not None:
             # Fetch Result
@@ -577,7 +593,7 @@ class Tomasulo:
             print(f"Writing back {result}")
 
             # Update ROB results
-            dest,name = self.ROB.findAndUpdateEntry(*result[:-1])
+            dest,name = self.ROB.findAndUpdateEntry(*result)
 
             print(f"ROB Destination: {name}")
 
@@ -596,8 +612,6 @@ class Tomasulo:
 
             # Update writeback cycle
             self.updateOutput(result[0], 3)
-
-        pass
 
 
     def commitStage(self):
@@ -628,17 +642,6 @@ class Tomasulo:
 
                 # Update commit cycle
                 self.updateOutput(resultID, 4)
-
-
-
-    def usage():
-        """
-        Simple helper to print usage information for the entry class
-        """
-        print("\nUsage:")
-        print("\n\t$ python3 Tomasulo.py <testFilePath>\n")
-
-
 # End Class Tomasulo
 
 
@@ -647,7 +650,8 @@ if __name__ == "__main__":
     import sys
     if len(sys.argv) < 2:
         print("No imput file provided!")
-        Tomasulo.usage()
+        print("\nUsage:")
+        print("\n\t$ python3 Tomasulo.py <testFilePath>\n")
         sys.exit(1)
     myCore = Tomasulo(sys.argv[1])
     myCore.runSimulation()

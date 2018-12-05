@@ -104,7 +104,7 @@ class IntegerALU:
         @return A list containing the instruction ID, the result, and a
         boolean representing whether this is a branch outcome
         """
-        return self.buffer.pop(0)
+        return self.buffer.pop(0)[:-1]
 
 
     def getResultID(self):
