@@ -54,9 +54,9 @@ class Tomasulo:
             self.RAT = RAT()
 
             # Instantiate RS for each type of FU with the specific size
-            self.RS_ALUIs = ReservationStation(self.Params["ALUI"][0])
-            self.RS_ALUFPs = ReservationStation(self.Params["ALUFP"][0])
-            self.RS_MULTFPs = ReservationStation(self.Params["MULTFP"][0])
+            self.RS_ALUIs = ReservationStation(self.Params["ALUI"][0],'Integer ALU')
+            self.RS_ALUFPs = ReservationStation(self.Params["ALUFP"][0], 'FP ALU')
+            self.RS_MULTFPs = ReservationStation(self.Params["MULTFP"][0], 'FP Multiplier')
 
             # Instantiate FUs
             # Integer ALUs

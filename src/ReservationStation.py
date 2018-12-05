@@ -16,14 +16,16 @@ class ReservationStation:
     This class implements a generic reservation station
     """
 
-    def __init__(self, size):
+    def __init__(self, size, name):
         """
         Constructor for the RS class
 
         @param size An integer representing the maximum amount of entries for
         this reservation station
+        @param name A string used to identify this RS in the dump() output
         """
         self.size = size
+        self.name = name
         self.q = []
 
 
@@ -131,7 +133,7 @@ class ReservationStation:
         """
         Pretty-prints the RS contents
         """
-        print("Reservation Station".ljust(48, '=').rjust(80, '='))
+        print(f"RS {self.name}".ljust(48, '=').rjust(80, '='))
         print("Index\tID\tDest\tOperation\tQi\tQj\tVi\tVj")
         if len(self.q) < 1:
             print("\t[ empty ]")
