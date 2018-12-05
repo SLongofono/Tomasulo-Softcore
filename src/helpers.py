@@ -84,7 +84,7 @@ def parseInstructions(rawInstructions):
     """
     results = []
     for raw in rawInstructions:
-        if raw.startswith('LD') or raw.startswith('SD'):    # case B type
+        if raw.startswith('LD') or raw.startswith('SD'):    # case S type
             name = raw[:2]
             temp = raw[3:].strip().split(',')
             reg = temp[0]
@@ -93,19 +93,16 @@ def parseInstructions(rawInstructions):
             base = temp[1][idx:].strip(')').strip('(')
             results.append( (name, reg, offset, base) )
 
-        elif raw.startswith('B'):                           # case B type
-            name = raw[:3]
-            temp = raw[3:].strip().split(',')
-            results.append( (name, temp[0], temp[1], int(temp[2])) )
-
-        elif raw.startswith('ADDI'):                        # case I type
-            name = raw[:4]
-            temp = raw[4:].strip().split(',')
+        elif raw.startswith('B') or raw.startswith('ADDI'): # case I,B type
+            name = raw[:raw.find(' ')]
+            temp = raw[raw.find(' '):].split(',')
+            temp = [x.strip() for x in temp]
             results.append( (name, temp[0], temp[1], int(temp[2])) )
 
         else:                                               # case R type
-            name = raw[:3]
-            temp = raw[3:].strip().split(',')
+            name = raw[:raw.find(' ')]
+            temp = raw[raw.find(' '):].split(',')
+            temp = [x.strip() for x in temp]
             temp.insert(0, name)
             results.append( tuple(temp) )
 
