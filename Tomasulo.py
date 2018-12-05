@@ -304,11 +304,13 @@ class Tomasulo:
                     tmp = nextInst
                     nextInst = self.IQ.fetch(offset=self.fetchOffset)
                     self.fetchOffset = 0
+                    # TODO we need to compute the address in the executeStage
                     #forwarding
                     ldAddr = nextInst[1][2] + nextInst[1][3]
                     if (self.STQ.check_forward(ldAddr) == True):
                         #hang up when detecting a forward problem
                         nextInst = tmp
+                    #After that updating the rob
                 return
 
             elif (nextName == "SD"):
@@ -368,6 +370,7 @@ class Tomasulo:
             # Prepare an entry for the RS
             entry = [nextInst[0], ROBId, nextInst[1][0], None, None, None, None]
 
+
             # Check if operands are ready now and update
             # Special case for branches:
             if nextName.startswith('B'):
@@ -384,7 +387,9 @@ class Tomasulo:
                     entry[6] = self.ARF.get(operand2)
                 else:
                     entry[4] = map2
-
+            # TODO CHECK HOW TO DO THIS FOR LD,SD
+            elif nextName == 'SD' or nextName == 'LD':
+                pass # TODO figure this out
             else:
                 # Update operands per the RAT
                 # nextInst  [0, ('ADD', 'R1', 'R2', 'R3')]
@@ -413,6 +418,8 @@ class Tomasulo:
                 self.RS_ALUFPs.add(*entry)
             elif(nextName == "MULT.D"):
                 self.RS_MULTFPs.add(*entry)
+            elif(nextName == 'SD' or nextName == 'LD'):
+                pass #TODO check me
             else:
                 self.RS_ALUIs.add(*entry)
 
@@ -441,6 +448,7 @@ class Tomasulo:
                                                            (x[6] is not None) and
                                                            (not x[7]) and
                                                            (not self.isNew(x[0])))]
+        # TODO this doesn't belong here, only compute address here
         ready_Ld = [x for x in self.LDQ.q if ( (not x[3]) and (not self.isNew(x[0])))]
         ready_St = [x for x in self.STQ.q if ( (x[3] is not None) and
                                              (not x[4]) and
@@ -520,6 +528,7 @@ class Tomasulo:
                     self.RS_ALUIs.purgeAfterMispredict(BID)
                     self.RS_ALUFPs.purgeAfterMispredict(BID)
                     self.RS_MULTFPs.purgeAfterMispredict(BID)
+                    #TODO purge instructions from load/store queue
 
                     # Clear ROB entries after branch
                     self.ROB.purgeAfterMispredict(BID)
@@ -546,8 +555,11 @@ class Tomasulo:
 
     def memoryStage(self):
         """
-        Cues the memory module to perform any queued LD/ST instructions and
+        Cues the memory module to perform any queued LD instructions and
         update its output buffer
+        1: check if we can send a load to memory (addr and value ready)
+        2: check if we can forward values to loads ( if so, write value, mark as
+        done for writeback stage)
         """
         pass
 
@@ -586,6 +598,11 @@ class Tomasulo:
                         oldestInst = temp
                         winningFU = FU
 
+        # Check if a load is ready, if none of the above work
+        if winningFU is None:
+            # TODO
+            pass
+
         if winningFU is not None:
             # Fetch Result
             result = winningFU.getResult()
@@ -620,6 +637,9 @@ class Tomasulo:
         if resultID is not None:
             # Verify that we didn't write back this cycle
             if not self.isNew(resultID):
+                # TODO check if this is a store.  If so, write the value to
+                # memory now
+
                 print(f"Committing instr. {resultID}")
 
                 # Reference ID, destination, value, doneflag, ROB#
@@ -634,8 +654,6 @@ class Tomasulo:
                 # Update ARF if this is not a branch
                 if not isinstance(result[2], bool):
                     self.ARF.set(result[1], result[2])
-
-                # TODO issue store if necessary
 
                 # Retire the instruction
                 self.numRetiredInstructions += 1
