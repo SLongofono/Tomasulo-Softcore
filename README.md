@@ -19,8 +19,16 @@ To test individual modules in the src directory, run them directly as scripts:
 - The project is currently under active development
 - The project is not in a working state
 
+# Project Requirements
+[See here](rubric.md)
+
+# Description of Operation
+Our software hierarchy is depicted below in the UML diagram.  To handle the requirement that some functional units are pipelined and others are not, we replicate time-tracking in the subclasses and functional units; cycles are counted and incremented by the top-level Tomasulo class, and for functional units that have time sensitive actions, an advanceTime() function is used to progress by one time unit.
+
+![The class hierarchy UML of the Tomasulo-Softcore](documentation/UML/Hierarchy.png)
+
 # Tasks
-## Major Functional Units 
+## Major Functional Units
 - [x] Input Parsing
 - [x] ROB class
 - [x] RS class
@@ -61,10 +69,4 @@ To test individual modules in the src directory, run them directly as scripts:
 - [ ] Complex test case: write patterns to memory
 - [ ] Complex test case: Fibonacci numbers recursive
 
-# Project Requirements
-[See here](rubric.md)
 
-# Description of Operation
-Our software hierarchy is depicted below in the UML diagram.  To handle the requirement that some functional units are pipelined and others are not, we replicate time-tracking in the subclasses and functional units; cycles are counted and incremented by the top-level Tomasulo class, and for functional units that have time sensitive actions, an advanceTime() function is used to progress by one time unit.
-
-![The class hierarchy UML of the Tomasulo-Softcore](documentation/UML/Hierarchy.png)
