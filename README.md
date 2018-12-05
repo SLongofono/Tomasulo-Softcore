@@ -48,25 +48,12 @@ Our software hierarchy is depicted below in the UML diagram.  To handle the requ
 - [x] Writeback procedure
 - [x] Commit procedure
 
-## Test Cases
-- [x] Simplest test case: execute a single ALU instruction end-to-end
-- [x] Simple ISA test case: ALU end-to-end
-- [ ] Simple ISA test case: FPALU end-to-end
-- [ ] Simple ISA test case: FP Multiplier end-to-end
+## Outstanding Test Cases
 - [ ] Simple ISA test case: Load/Store end-to-end
-- [x] Simple ISA test case: Branch end-to-end
 - [ ] Addressing corner cases test
-- [ ] Verify absence of WAW test case
 - [ ] Verify absence of WAR test case
-- [ ] Verify handling of RAW test case
 - [ ] Verify memory disambiguation
-- [ ] Verify illegal instructions fail
-- [ ] Complex test case: all instructions
-- [ ] Complex test case: single speculation fail
-- [ ] Complex test case: multiple speculation fail
-- [ ] Complex test case: chained speculation; fail in middle
-- [ ] Complex test case: extended length loop
 - [ ] Complex test case: write patterns to memory
-- [ ] Complex test case: Fibonacci numbers recursive
+- [ ] Complex test case: sum over floats in memory
 
 
