@@ -505,7 +505,7 @@ class Tomasulo:
         """
         for FU in self.ALUIs:
             if FU.isBranchOutcomePending():
-                BID, outcome, _ = FU.getResult()
+                BID, outcome = FU.getResult()
                 prediction = self.branch.predict(BID)
                 if outcome != prediction:
                     # signal branch rollback
