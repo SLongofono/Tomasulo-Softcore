@@ -155,9 +155,7 @@ class Tomasulo:
             # Advance time
             self.advanceTime()
 
-            # TODO We need to figure out the termination condition.  Probably equivalent
-            # to at the end of the instruction queue and all reservation stations empty
-            if(self.cycle == 100):
+            if(self.done):
                 break
 
         self.writeOutput()
@@ -288,7 +286,9 @@ class Tomasulo:
         Attempts to issue the next instruction in the Instruction Queue
         """
         if self.IQ.empty(offset=self.fetchOffset):
-            print(f"EMPTY IQ, offset={self.fetchOffset}")
+            print(f"EMPTY IQ, offset={self.fetchOffset}") # TODO Add in LDSTQ check below
+            if(0 == (len(self.RS_ALUIs.q)+len(self.RS_ALUFPs.q)+len(self.RS_MULTFPs.q))):
+                self.done = True # If all reservation stations are empty, we are done
             return
 
         if not self.ROB.isFull():
