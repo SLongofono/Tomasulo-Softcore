@@ -127,6 +127,21 @@ class IntegerALU:
             self.nextFreeTime = -1
 
 
+    def purgeAfterMispredict(self, BID):
+        """
+        Removes all currently queued and completed instructions with ID > BID
+
+        @param BID An integer representing the instruction ID of the
+        mispredicted branch
+        """
+        self.buffer = [ x for x in self.buffer if x[0] <= BID ]
+        if self.activeInstruction is not None:
+            if self.activeInstruction[0] > BID:
+                self.activeInstruction = None
+                self.nextFreeTime = -1
+
+
+
     def dump(self):
         """
         Pretty-prints the state of the ALU

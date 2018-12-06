@@ -59,7 +59,7 @@ class Tomasulo:
 
             # Instantiate FUs
             # Integer ALUs
-            self.ALUIs = [IntegerALU(1,1) for i in range(self.Params["ALUI"][-1])]
+            self.ALUIs = [IntegerALU(self.Params["ALUI"][1],1) for i in range(self.Params["ALUI"][-1])]
 
             # Get latency of FP Unit from file
             latency = {}
@@ -153,9 +153,7 @@ class Tomasulo:
             # Advance time
             self.advanceTime()
 
-            # TODO We need to figure out the termination condition.  Probably equivalent
-            # to at the end of the instruction queue and all reservation stations empty
-            if(self.cycle == 100):
+            if(self.done):
                 break
 
         self.writeOutput()
@@ -284,7 +282,9 @@ class Tomasulo:
         Attempts to issue the next instruction in the Instruction Queue
         """
         if self.IQ.empty(offset=self.fetchOffset):
-            print(f"EMPTY IQ, offset={self.fetchOffset}")
+            print(f"EMPTY IQ, offset={self.fetchOffset}") # TODO Add in LDSTQ check below
+            if(0 == (len(self.RS_ALUIs.q)+len(self.RS_ALUFPs.q)+len(self.RS_MULTFPs.q))):
+                self.done = True # If all reservation stations are empty, we are done
             return
 
         if not self.ROB.isFull():
@@ -519,6 +519,18 @@ class Tomasulo:
                     #TODO purge instructions from load/store queue
 					#TODO I need to implement purge in MULTU
 
+                    # Clear speculative instructions in all FUs
+                    for funcU in self.ALUIs:
+                        funcU.purgeAfterMispredict(BID)
+
+
+                    # TODO uncomment once these are implemented
+                    #for funcU in self.ALUFPs:
+                        #funcU.purgeAfterMispredict(BID)
+
+                    #for funcU in self.MULTFPs:
+                        #funcU.purgeAfterMispredict(BID)
+
                     # Clear ROB entries after branch
                     self.ROB.purgeAfterMispredict(BID)
 
@@ -536,6 +548,8 @@ class Tomasulo:
                     dead = [x for x in self.output.keys() if x > BID]
                     for deadEntry in dead:
                         del self.output[deadEntry]
+                    print("OUTPUT")
+                    print(self.output)
 
                 # Since we pulled the result, handle the ROB bookkeeping
                 dest = self.ROB.findAndUpdateEntry(BID, outcome)
@@ -555,9 +569,9 @@ class Tomasulo:
                 #check forward
                 for y in self.LDSTQ.q:
                     if y[1] == 'SD' and y[2] == x[3]:
-						x[3] = y[3]
-				#TODO check done? 1. ARF.get to fetch R1 2.ROB.findAndUpdateEntry to get F1
-					
+                        x[3] = y[3]
+                        #TODO check done? 1. ARF.get to fetch R1 2.ROB.findAndUpdateEntry to get F1
+
 
     def writebackStage(self):
         """
