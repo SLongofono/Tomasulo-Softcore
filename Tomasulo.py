@@ -60,7 +60,7 @@ class Tomasulo:
 
             # Instantiate FUs
             # Integer ALUs
-            self.ALUIs = [IntegerALU(1,1) for i in range(self.Params["ALUI"][-1])]
+            self.ALUIs = [IntegerALU(self.Params["ALUI"][1],1) for i in range(self.Params["ALUI"][-1])]
 
             # Get latency of FP Unit from file
             latency = {}
@@ -119,14 +119,14 @@ class Tomasulo:
 
             # Log state
             #self.dump()
-            self.IQ.dump()
-            self.LDQ.dump()
-            self.STQ.dump()
-            self.ALUIs[0].dump()
-            self.RS_ALUIs.dump()
-            self.RS_ALUFPs.dump()
-            self.RS_MULTFPs.dump()
-            self.ROB.dump()
+            #self.IQ.dump()
+            #self.LDQ.dump()
+            #self.STQ.dump()
+            #self.ALUIs[0].dump()
+            #self.RS_ALUIs.dump()
+            #self.RS_ALUFPs.dump()
+            #self.RS_MULTFPs.dump()
+            #self.ROB.dump()
 
             # Try to issue new instructions
             print("ISSUE")
@@ -521,6 +521,18 @@ class Tomasulo:
                     self.RS_ALUFPs.purgeAfterMispredict(BID)
                     self.RS_MULTFPs.purgeAfterMispredict(BID)
 
+                    # Clear speculative instructions in all FUs
+                    for funcU in self.ALUIs:
+                        funcU.purgeAfterMispredict(BID)
+
+
+                    # TODO uncomment once these are implemented
+                    #for funcU in self.ALUFPs:
+                        #funcU.purgeAfterMispredict(BID)
+
+                    #for funcU in self.MULTFPs:
+                        #funcU.purgeAfterMispredict(BID)
+
                     # Clear ROB entries after branch
                     self.ROB.purgeAfterMispredict(BID)
 
@@ -538,6 +550,8 @@ class Tomasulo:
                     dead = [x for x in self.output.keys() if x > BID]
                     for deadEntry in dead:
                         del self.output[deadEntry]
+                    print("OUTPUT")
+                    print(self.output)
 
                 # Since we pulled the result, handle the ROB bookkeeping
                 dest = self.ROB.findAndUpdateEntry(BID, outcome)

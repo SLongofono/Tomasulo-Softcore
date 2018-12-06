@@ -97,8 +97,7 @@ class ReservationStation:
         @return None
         """
         dead = [ i for i, entry in enumerate(self.q) if entry[ID] > instructionID  ]
-        for deadEntry in dead:
-            self.q.pop(deadEntry)
+        self.q = [ entry for i, entry in enumerate(self.q) if not i in dead ]
 
 
     def update(self, tag, value):
