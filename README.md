@@ -12,12 +12,14 @@ where <python 3> is your python 3 CLI interpreter and test1.txt is a valid input
 # Test Cases
 The test cases incrementally test that all instructions are properly supported, that the algorithm is executing correctly, and that the additional features are performing their respective tasks correctly.  The test cases are organized into the testCases/ directory by prefix; "test1.txt", "test1_expected.txt", and "test1_output.txt" designate the input test case file, the hand-derived output expected, and the actual output generated respectively.
 
+To run all tests and enumerate the results, change into the test directory and run the runTests.sh scripts:
+`./runTests.sh`
+
 To test individual modules in the src directory, run them directly as scripts:
 `<python 3> ROB.py`
 
 # Status
-- The project is currently under active development
-- The project is not in a working state
+- The project is complete
 
 # Project Requirements
 [See here](rubric.md)
@@ -51,7 +53,6 @@ Our software hierarchy is depicted below in the UML diagram.  To handle the requ
 ## Outstanding Test Cases
 - [ ] Simple ISA test case: Load/Store end-to-end
 - [ ] Addressing corner cases test
-- [ ] Verify absence of WAR test case
 - [ ] Verify memory disambiguation
 - [ ] Complex test case: write patterns to memory
 - [ ] Complex test case: sum over floats in memory

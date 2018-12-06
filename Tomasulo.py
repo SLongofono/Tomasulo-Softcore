@@ -438,8 +438,9 @@ class Tomasulo:
         #Compute value in LDSTQ and store it in x[3]
         for x in self.LDSTQ.q:
             if x[5] == False:
-            #TO DO how to get $Register
-        #       value = self.memory.mem_read($x[3] + x[4])
+                #TODO how to get $Register
+                # value = self.memory.mem_read($x[3] + x[4])
+                #  *** byte address = offset + 4* word address ***
                 x[3] = value
                 x[5] = True
 
