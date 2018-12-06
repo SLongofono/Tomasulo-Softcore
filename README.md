@@ -19,8 +19,16 @@ To test individual modules in the src directory, run them directly as scripts:
 - The project is currently under active development
 - The project is not in a working state
 
+# Project Requirements
+[See here](rubric.md)
+
+# Description of Operation
+Our software hierarchy is depicted below in the UML diagram.  To handle the requirement that some functional units are pipelined and others are not, we replicate time-tracking in the subclasses and functional units; cycles are counted and incremented by the top-level Tomasulo class, and for functional units that have time sensitive actions, an advanceTime() function is used to progress by one time unit.
+
+![The class hierarchy UML of the Tomasulo-Softcore](documentation/UML/Hierarchy.png)
+
 # Tasks
-## Major Functional Units 
+## Major Functional Units
 - [x] Input Parsing
 - [x] ROB class
 - [x] RS class
@@ -40,31 +48,12 @@ To test individual modules in the src directory, run them directly as scripts:
 - [x] Writeback procedure
 - [x] Commit procedure
 
-## Test Cases
-- [x] Simplest test case: execute a single ALU instruction end-to-end
-- [x] Simple ISA test case: ALU end-to-end
-- [ ] Simple ISA test case: FPALU end-to-end
-- [ ] Simple ISA test case: FP Multiplier end-to-end
+## Outstanding Test Cases
 - [ ] Simple ISA test case: Load/Store end-to-end
-- [x] Simple ISA test case: Branch end-to-end
 - [ ] Addressing corner cases test
-- [ ] Verify absence of WAW test case
 - [ ] Verify absence of WAR test case
-- [ ] Verify handling of RAW test case
 - [ ] Verify memory disambiguation
-- [ ] Verify illegal instructions fail
-- [ ] Complex test case: all instructions
-- [ ] Complex test case: single speculation fail
-- [ ] Complex test case: multiple speculation fail
-- [ ] Complex test case: chained speculation; fail in middle
-- [ ] Complex test case: extended length loop
 - [ ] Complex test case: write patterns to memory
-- [ ] Complex test case: Fibonacci numbers recursive
+- [ ] Complex test case: sum over floats in memory
 
-# Project Requirements
-[See here](rubric.md)
 
-# Description of Operation
-Our software hierarchy is depicted below in the UML diagram.  To handle the requirement that some functional units are pipelined and others are not, we replicate time-tracking in the subclasses and functional units; cycles are counted and incremented by the top-level Tomasulo class, and for functional units that have time sensitive actions, an advanceTime() function is used to progress by one time unit.
-
-![The class hierarchy UML of the Tomasulo-Softcore](documentation/UML/Hierarchy.png)
