@@ -45,8 +45,7 @@ class Tomasulo:
             self.IQ = InstructionQueue(self.Params["Instructions"])
 
             #Instantiate Load and Store Queue
-            self.LDQ = LdQ(self.Params["LoadStoreUnit"][0])
-            self.STQ = StQ(self.Params["LoadStoreUnit"][0])
+            self.LDSTQ = LdStQ(self.Params["LoadStoreUnit"][0])
 
             # Instantiate ROB, RAT, ARF
             self.ROB = ROB(self.Params["ROBEntries"])
@@ -120,8 +119,7 @@ class Tomasulo:
             # Log state
             #self.dump()
             self.IQ.dump()
-            self.LDQ.dump()
-            self.STQ.dump()
+            self.LDSTQ.dump()
             self.ALUIs[0].dump()
             self.RS_ALUIs.dump()
             self.RS_ALUFPs.dump()
@@ -175,8 +173,7 @@ class Tomasulo:
             FU.advanceTime()
         for FU in self.MULTFPs:
             FU.advanceTime()
-        self.LDQ.advanceTime()
-        self.STQ.advanceTime()
+        self.LDSTQ.advanceTime()
 
 
     def updateOutput(self, ID, stage):
@@ -209,8 +206,7 @@ class Tomasulo:
         self.RAT.dump()
         self.memory.dump()
         self.IQ.dump()
-        self.StQ.dump()
-        self.LdQ.dump()
+        self.LDSTQ.dump()
 
 
     def writeOutput(self):
@@ -299,22 +295,8 @@ class Tomasulo:
 
             # Check that the relevant RS is not full
             # Fetch actual instruction
-            if (nextName == "LD"):
-                if not self.LDQ.isFull():
-                    tmp = nextInst
-                    nextInst = self.IQ.fetch(offset=self.fetchOffset)
-                    self.fetchOffset = 0
-                    # TODO we need to compute the address in the executeStage
-                    #forwarding
-                    ldAddr = nextInst[1][2] + nextInst[1][3]
-                    if (self.STQ.check_forward(ldAddr) == True):
-                        #hang up when detecting a forward problem
-                        nextInst = tmp
-                    #After that updating the rob
-                return
-
-            elif (nextName == "SD"):
-                if not self.STQ.isFull():
+            if (nextName == "LD" or nextname == "SD"):
+                if not self.LDSTQ.isFull():
                     nextInst = self.IQ.fetch(offset=self.fetchOffset)
                     self.fetchOffset = 0
                 return
@@ -389,7 +371,7 @@ class Tomasulo:
                     entry[4] = map2
             # TODO CHECK HOW TO DO THIS FOR LD,SD
             elif nextName == 'SD' or nextName == 'LD':
-                pass # TODO figure this out
+                self.LDSTQ.add(nextInst[0], nextName, nextInst[1][1], nextInst[1][2], nextInst[1][3])
             else:
                 # Update operands per the RAT
                 # nextInst  [0, ('ADD', 'R1', 'R2', 'R3')]
@@ -429,6 +411,10 @@ class Tomasulo:
             self.updateOutput(entry[0], 0)
 
 
+                    if (self.STQ.check_forward(ldAddr) == True):
+                        #hang up when detecting a forward problem
+                        nextInst = tmp
+                    #After that updating the rob
     def executeStage(self):
         """
         For each funcitonal unit, attempts to find an instruction which is
@@ -448,12 +434,14 @@ class Tomasulo:
                                                            (x[6] is not None) and
                                                            (not x[7]) and
                                                            (not self.isNew(x[0])))]
-        # TODO this doesn't belong here, only compute address here
-        ready_Ld = [x for x in self.LDQ.q if ( (not x[3]) and (not self.isNew(x[0])))]
-        ready_St = [x for x in self.STQ.q if ( (x[3] is not None) and
-                                             (not x[4]) and
-                                             (not self.isNew(x[0])))]
 
+        #Compute value in LDSTQ and store it in x[3]
+        for x in self.LDSTQ.q:
+            if x[5] == False:
+            #TO DO how to get $Register
+        #       value = self.memory.mem_read($x[3] + x[4])
+                x[3] = value
+                x[5] = True
 
         # Mark executed instructions for cleanup
         markAsExecuting = []
@@ -529,6 +517,7 @@ class Tomasulo:
                     self.RS_ALUFPs.purgeAfterMispredict(BID)
                     self.RS_MULTFPs.purgeAfterMispredict(BID)
                     #TODO purge instructions from load/store queue
+					#TODO I need to implement purge in MULTU
 
                     # Clear ROB entries after branch
                     self.ROB.purgeAfterMispredict(BID)
@@ -561,8 +550,14 @@ class Tomasulo:
         2: check if we can forward values to loads ( if so, write value, mark as
         done for writeback stage)
         """
-        #Check if there are results ready to be load 
-		pass
+        for x in self.LDSTQ.q:
+            if x[1] == 'LD':
+                #check forward
+                for y in self.LDSTQ.q:
+                    if y[1] == 'SD' and y[2] == x[3]:
+						x[3] = y[3]
+				#TODO check done? 1. ARF.get to fetch R1 2.ROB.findAndUpdateEntry to get F1
+					
 
     def writebackStage(self):
         """
