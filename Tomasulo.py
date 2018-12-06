@@ -545,8 +545,8 @@ class Tomasulo:
         Cues the memory module to perform any queued LD instructions and
         update its output buffer
         """
-        pass
-
+        #Check if there are results ready to be load 
+		pass
 
     def writebackStage(self):
         """
