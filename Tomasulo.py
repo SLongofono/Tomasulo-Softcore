@@ -172,7 +172,7 @@ class Tomasulo:
         for FU in self.MULTFPs:
             FU.advanceTime()
         self.LDSTQ.advanceTime()
-		self.memory.advanceTime()
+        self.memory.advanceTime()
 
 
     def updateOutput(self, ID, stage):
@@ -440,7 +440,7 @@ class Tomasulo:
                     byte_addr = x[4] + 4 * self.ARF.get(x[3])
                     x[3] = byte_addr
                     x[5] = True
-					break
+                    break
 
         # Mark executed instructions for cleanup
         markAsExecuting = []
@@ -561,7 +561,7 @@ class Tomasulo:
         1: check if we can send a load to memory (addr and value ready)
         2: check if we can forward values to loads ( if so, write value, mark as
         done for writeback stage)
-		3. the memory of store procedure is also here
+        3. the memory of store procedure is also here
         """
         for x in self.LDSTQ.q:
             if x[1] == 'LD' and x[5] == True and x[6] == False:
@@ -573,12 +573,12 @@ class Tomasulo:
                     x[3] = self.memory.mem_read(x[3])
                 x[6] = True
 
-		self.LDSTQ.checkReady()
+        self.LDSTQ.checkReady()
 
-		if not self.memory.busy():
-			if self.LDSTQ.isResultReady():
-				result = self.LDSTQ.getResult()
-				self.memory.execute(result)
+        if not self.memory.busy():
+            if self.LDSTQ.isResultReady():
+                result = self.LDSTQ.getResult()
+                self.memory.execute(result)
 
     def writebackStage(self):
         """
@@ -639,8 +639,8 @@ class Tomasulo:
             self.RS_ALUIs.update(name, result[1])
             self.RS_ALUFPs.update(name, result[1])
             self.RS_MULTFPs.update(name, result[1])
-			
-			self.LDSTQ.update(name, result[1])
+            
+            self.LDSTQ.update(name, result[1])
 
             # Free old reservation station(just blindly call)
             self.RS_ALUIs.remove(result[0])
@@ -657,8 +657,8 @@ class Tomasulo:
         if resultID is not None:
             # Verify that we didn't write back this cycle
             if not self.isNew(resultID):
-				#Check if store is ready
-				self.memory.checkReady()
+                #Check if store is ready
+                self.memory.checkReady()
 
                 print(f"Committing instr. {resultID}")
 
