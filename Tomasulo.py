@@ -10,7 +10,7 @@ from src.BranchUnit import BranchUnit
 from src.MemoryUnit import MemoryUnit
 from src.RAT import RAT
 from src.ARF import ARF
-from src.LdStQ import StQ, LdQ
+from src.LdStQ import LdStQ
 from src.FPALU import FPAdder, FPMultiplier
 
 
@@ -45,7 +45,7 @@ class Tomasulo:
             self.IQ = InstructionQueue(self.Params["Instructions"])
 
             #Instantiate Load and Store Queue
-            self.LDSTQ = LdStQ(self.Params["LoadStoreUnit"][0])
+            self.LDSTQ = LdStQ(self.Params["LoadStoreUnit"][0], self.Params["LoadStoreUnit"][1])
 
             # Instantiate ROB, RAT, ARF
             self.ROB = ROB(self.Params["ROBEntries"])
@@ -74,7 +74,7 @@ class Tomasulo:
             self.MULTFPs = [FPMultiplier(latency,1,3) for i in range(self.Params["MULTFP"][-1])]
 
             # Instatiate Memory
-            self.memory = MemoryUnit()
+            self.memory = MemoryUnit(self.Params["LoadStoreUnit"][2])
             for byteAddress, value in self.Params["MemInitData"]:
                 self.memory.mem_write(byteAddress, value)
             self.memory.dump()
@@ -172,6 +172,7 @@ class Tomasulo:
         for FU in self.MULTFPs:
             FU.advanceTime()
         self.LDSTQ.advanceTime()
+		self.memory.advanceTime()
 
 
     def updateOutput(self, ID, stage):
@@ -282,8 +283,8 @@ class Tomasulo:
         Attempts to issue the next instruction in the Instruction Queue
         """
         if self.IQ.empty(offset=self.fetchOffset):
-            print(f"EMPTY IQ, offset={self.fetchOffset}") # TODO Add in LDSTQ check below
-            if(0 == (len(self.RS_ALUIs.q)+len(self.RS_ALUFPs.q)+len(self.RS_MULTFPs.q))):
+            print(f"EMPTY IQ, offset={self.fetchOffset}") 
+            if(0 == (len(self.RS_ALUIs.q)+len(self.RS_ALUFPs.q)+len(self.RS_MULTFPs.q)+len(self.LDSTQ.q))):
                 self.done = True # If all reservation stations are empty, we are done
             return
 
@@ -371,7 +372,7 @@ class Tomasulo:
                     entry[4] = map2
             # TODO CHECK HOW TO DO THIS FOR LD,SD
             elif nextName == 'SD' or nextName == 'LD':
-                self.LDSTQ.add(nextInst[0], nextName, nextInst[1][1], nextInst[1][2], nextInst[1][3])
+                self.LDSTQ.add(nextInst[0], nextName, ROBId, nextInst[1][2], nextInst[1][3])
             else:
                 # Update operands per the RAT
                 # nextInst  [0, ('ADD', 'R1', 'R2', 'R3')]
@@ -411,10 +412,6 @@ class Tomasulo:
             self.updateOutput(entry[0], 0)
 
 
-                    if (self.STQ.check_forward(ldAddr) == True):
-                        #hang up when detecting a forward problem
-                        nextInst = tmp
-                    #After that updating the rob
     def executeStage(self):
         """
         For each funcitonal unit, attempts to find an instruction which is
@@ -435,14 +432,15 @@ class Tomasulo:
                                                            (not x[7]) and
                                                            (not self.isNew(x[0])))]
 
-        #Compute value in LDSTQ and store it in x[3]
-        for x in self.LDSTQ.q:
-            if x[5] == False:
-                #TODO how to get $Register
-                # value = self.memory.mem_read($x[3] + x[4])
-                #  *** byte address = offset + 4* word address ***
-                x[3] = value
-                x[5] = True
+        #Compute value in LDSTQ and store the memory address in x[3]
+        if not self.LDSTQ.busy():
+            entry = self.LDSTQ.execute()
+            for x in self.LDSTQ.q:
+                if x[5] == False:
+                    byte_addr = x[4] + 4 * self.ARF.get(x[3])
+                    x[3] = byte_addr
+                    x[5] = True
+					break
 
         # Mark executed instructions for cleanup
         markAsExecuting = []
@@ -517,20 +515,19 @@ class Tomasulo:
                     self.RS_ALUIs.purgeAfterMispredict(BID)
                     self.RS_ALUFPs.purgeAfterMispredict(BID)
                     self.RS_MULTFPs.purgeAfterMispredict(BID)
-                    #TODO purge instructions from load/store queue
-					#TODO I need to implement purge in MULTU
 
                     # Clear speculative instructions in all FUs
                     for funcU in self.ALUIs:
                         funcU.purgeAfterMispredict(BID)
 
+                    for funcU in self.ALUFPs:
+                        funcU.purgeAfterMispredict(BID)
 
-                    # TODO uncomment once these are implemented
-                    #for funcU in self.ALUFPs:
-                        #funcU.purgeAfterMispredict(BID)
+                    for funcU in self.MULTFPs:
+                        funcU.purgeAfterMispredict(BID)
 
-                    #for funcU in self.MULTFPs:
-                        #funcU.purgeAfterMispredict(BID)
+                    self.LDSTQ.purgeAfterMispredict(BID)
+                    self.memory.purgeAfterMispredict(BID)
 
                     # Clear ROB entries after branch
                     self.ROB.purgeAfterMispredict(BID)
@@ -564,15 +561,24 @@ class Tomasulo:
         1: check if we can send a load to memory (addr and value ready)
         2: check if we can forward values to loads ( if so, write value, mark as
         done for writeback stage)
+		3. the memory of store procedure is also here
         """
         for x in self.LDSTQ.q:
-            if x[1] == 'LD':
-                #check forward
+            if x[1] == 'LD' and x[5] == True and x[6] == False:
+                #check forward, if so subtitute value address of load with the ROB id of store
                 for y in self.LDSTQ.q:
-                    if y[1] == 'SD' and y[2] == x[3]:
-                        x[3] = y[3]
-                        #TODO check done? 1. ARF.get to fetch R1 2.ROB.findAndUpdateEntry to get F1
+                    if y[1] == 'SD' and y[3] == x[3] and y[5] == True:
+                        x[3] = y[2]    
+                if isinstance(x[3], int):
+                    x[3] = self.memory.mem_read(x[3])
+                x[6] = True
 
+		self.LDSTQ.checkReady()
+
+		if not self.memory.busy():
+			if self.LDSTQ.isResultReady():
+				result = self.LDSTQ.getResult()
+				self.memory.execute(result)
 
     def writebackStage(self):
         """
@@ -610,8 +616,12 @@ class Tomasulo:
 
         # Check if a load is ready, if none of the above work
         if winningFU is None:
-            # TODO
-            pass
+            for FU in self.memory:
+                if FU.isResultReady:
+                    temp = FU.getResultID()
+                    if temp < oldestInst:
+                        oldestInst = temp
+                        winningFU = FU
 
         if winningFU is not None:
             # Fetch Result
@@ -629,8 +639,8 @@ class Tomasulo:
             self.RS_ALUIs.update(name, result[1])
             self.RS_ALUFPs.update(name, result[1])
             self.RS_MULTFPs.update(name, result[1])
-
-            # TODO update load/stores
+			
+			self.LDSTQ.update(name, result[1])
 
             # Free old reservation station(just blindly call)
             self.RS_ALUIs.remove(result[0])
@@ -647,8 +657,8 @@ class Tomasulo:
         if resultID is not None:
             # Verify that we didn't write back this cycle
             if not self.isNew(resultID):
-                # TODO check if this is a store.  If so, write the value to
-                # memory now
+				#Check if store is ready
+				self.memory.checkReady()
 
                 print(f"Committing instr. {resultID}")
 

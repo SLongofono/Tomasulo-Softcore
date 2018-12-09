@@ -64,6 +64,16 @@ class FPMultiplier:
 	def busy(self):
 		return ((self.pipeline.busy()) or (len(self.buffer) == self.bufferLen) ) 	
 
+
+	def purgeAfterMispredict(self, BID):
+		"""
+		Removes all currently queued and completed instructions with ID> BID
+	
+		@param BID An integer representing the instruction ID of the mispredicted branch
+		"""
+		self.buffer = [x for x in self.buffer if x[0]<= BID ]
+		self.pipeline.pipeline = [x for x in self.pipeline.pipeline if x[0]<= BID ]
+
 	def isResultReady(self):
 		return len(self.buffer) > 0
 
@@ -126,6 +136,15 @@ class FPAdder:
 
 	def busy(self):
 		return ((self.pipeline.busy()) or (len(self.buffer) == self.bufferLen) ) 	
+
+	def purgeAfterMispredict(self, BID):
+		"""
+		Removes all currently queued and completed instructions with ID> BID
+
+		@param BID An integer representing the instruction ID of the mispredicted branch
+		"""
+		self.buffer = [x for x in self.buffer if x[0]<= BID ]
+		self.pipeline.pipeline = [x for x in self.pipeline.pipeline if x[0]<= BID ]
 
 	def isResultReady(self):
 		return len(self.buffer) > 0

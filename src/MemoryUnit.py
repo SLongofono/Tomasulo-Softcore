@@ -5,17 +5,74 @@ class MemoryUnit:
 	"""
 	This class implements a single-ported 256B memory Unit
 	"""
-	def __init__(self):
+	def __init__(self, latency):
 		"""
 		Constructor for the memory unit
 
 		@param memory A list representing the memory unit for each word
 		@param flag A list representing if the corresponding word address is taken by float value
 		@param memory_max_length An integar representing the maximum length of the memory byte address
+
+		@param buffer An list storing the result of memory read
 		"""
 		self.memory = [0] * 64
 		self.flag = [0] * 64
 		self.memory_max_length = 256
+		
+		self.latency = latency
+		self.time = 0
+		self.nextFreeTime = -1
+		self.curInstr = None
+		self.buffer = []
+
+	def busy(self):
+		"""
+		Getter for the busy status of the Memory
+		"""
+		return self.time < self.nextFreeTime
+
+	def purgeAfterMispredict(self.BID):
+		if self.curInstr != None:
+			if self.curInstr[0] > BID:
+				self.curInstr = None
+				self.nextFreeTime = -1
+
+	def isResultReady(self):
+		'''
+		Getter determines if a memory read result is waiting to be written back
+		'''
+		return len(self.buffer) > 0
+	
+	def getResult(self):
+		'''
+		@return A list containing the instruction ID and the read result
+		'''
+		return self.buffer.pop(0)
+
+	def getResultID(self):
+		'''
+		Getter for the ID of the header of output buffer
+		'''
+		return self.buffer[0][0]
+
+	def execute(self, instr):
+		"""
+		Run the Load/Store memory stage
+
+		@instr An tuple containing the id, instruction_type, target_address and value 
+		"""
+		self.nextFreeTime = self.time + self.latency
+		self.curInstr = instr
+
+	def advanceTime(self):
+		self.time += 1
+		if self.time == self.nextFreeTime:
+			if(curInstr[1] == 'LD'):
+				result = self.mem_read(curInstr[3])
+				self.buffer.append([curInstr[0],result])
+			elif(curInstr[1] == 'SD'):
+				self.mem_write(curInstr[2],curInstr[3])
+			self.nextFreeTime = -1
 
 	def mem_write(self, addr, value):
 		"""
