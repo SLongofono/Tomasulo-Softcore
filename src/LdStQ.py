@@ -35,7 +35,7 @@ class LdStQ:
 				self.curInstr = x
 				break
 
-	def update(self. tag, value):
+	def update(self, tag, value):
 		for entry in self.q:
 			if entry[2] == tag:
 				entry[2] = value
@@ -77,6 +77,7 @@ class LdStQ:
 		for x in self.q:
 			if x[5] and x[6] and x[7] and x[8]:
 				self.buffer.append((x[0], x[1], x[2], x[3]))
+				self.q.remove(x)
 
 	def advanceTime(self):
 		self.time += 1
@@ -102,13 +103,31 @@ class LdStQ:
 		return self.buffer[0][0]
 
 	def dump(self):
-		print("Store queue".ljust(50, '=').rjust(80, '='))
+		print("Load/Store queue".ljust(50, '=').rjust(80, '='))
 		if(len(self.q) == 0):
 			print("\t[ empty ]")
 		else:
 			for entry in self.q:
-				print("{}\t{}\t{}\t{}\t".format(entry[0],entry[1],entry[2],entry[3]))
+				print("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t".format(entry[0],entry[1],entry[2],entry[3],entry[4],entry[5],entry[6],entry[7],entry[8]))
 		print()
 
-if __name__ == "main":
-	
+if __name__ == "__main__":
+	myq = LdStQ(3,1)	
+	t = 0
+	myq.dump()
+	myq.add(1,'LD','ROB2',8,8)
+	myq.dump()
+	myq.execute()
+	print("Busy?:{}".format(myq.busy()))
+	myq.advanceTime()
+	myq.dump()
+	print("Busy?:{}".format(myq.busy()))
+	myq.checkReady()
+	print("Ready?:{}".format(myq.isResultReady()))
+	myq.q[0][5] = True
+	myq.q[0][6] = True
+	myq.update('ROB2',16)
+	myq.checkReady()
+	myq.dump()
+	print("Ready?:{}".format(myq.isResultReady()))
+	print("Get result:{}".format(myq.getResult()))

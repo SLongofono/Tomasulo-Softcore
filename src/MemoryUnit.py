@@ -31,7 +31,7 @@ class MemoryUnit:
 		"""
 		return self.time < self.nextFreeTime
 
-	def purgeAfterMispredict(self.BID):
+	def purgeAfterMispredict(self, BID):
 		if self.curInstr != None:
 			if self.curInstr[0] > BID:
 				self.curInstr = None
@@ -67,11 +67,11 @@ class MemoryUnit:
 	def advanceTime(self):
 		self.time += 1
 		if self.time == self.nextFreeTime:
-			if(curInstr[1] == 'LD'):
-				result = self.mem_read(curInstr[3])
-				self.buffer.append([curInstr[0],result])
-			elif(curInstr[1] == 'SD'):
-				self.mem_write(curInstr[2],curInstr[3])
+			if(self.curInstr[1] == 'LD'):
+				result = self.mem_read(self.curInstr[3])
+				self.buffer.append([self.curInstr[0],result])
+			elif(self.curInstr[1] == 'SD'):
+				self.mem_write(self.curInstr[2],self.curInstr[3])
 			self.nextFreeTime = -1
 
 	def mem_write(self, addr, value):
@@ -109,7 +109,8 @@ class MemoryUnit:
 		entries = [(str(i),x) for i,x in enumerate(self.memory) if ((x < 0.0) or (x > 0.0))]
 		newLine = False
 		for address, contents in entries:
-			print(f"Word {address.rjust(2,'0')}: {contents:.6f} ".ljust(40,' '),end='')
+			#print(f"Word {address.rjust(2,'0')}: {contents:.6f} ".ljust(40,' '),end='')
+			print("Word {}:{}".format(address.rjust(2,'0'), contents))
 			if newLine:
 				print()
 			newLine = not newLine
@@ -117,12 +118,31 @@ class MemoryUnit:
 		print('\n')
 
 if __name__ == "__main__":
-	MMU = MemoryUnit()
+	MMU = MemoryUnit(4)
+	t = 0
 	MMU.mem_write(4,1)
 	MMU.mem_write(8,2)
 	MMU.mem_write(12,3.4)
 	MMU.dump()
-	for i in range(256):
-		MMU.mem_write(i, 1)
+#	for i in range(256):
+#		MMU.mem_write(i, 1)
+#	MMU.dump()
+
+	instr1 = (1,'LD',8,12)
+	MMU.execute(instr1)
+	print("Busy?:{}".format(MMU.busy()))
+	MMU.advanceTime()
+	MMU.advanceTime()
+	MMU.advanceTime()
+	MMU.advanceTime()
+	print("Busy?:{}".format(MMU.busy()))
+	print("Ready?:{}".format(MMU.isResultReady()))
+	print("Get result:{}".format(MMU.getResult()))
+	instr2 = (2,'SD',8,12)
+	MMU.execute(instr2)
+	MMU.advanceTime()
+	MMU.advanceTime()
+	MMU.advanceTime()
+	MMU.advanceTime()
 	MMU.dump()
 
