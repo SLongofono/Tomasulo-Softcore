@@ -283,7 +283,7 @@ class Tomasulo:
         Attempts to issue the next instruction in the Instruction Queue
         """
         if self.IQ.empty(offset=self.fetchOffset):
-            print(f"EMPTY IQ, offset={self.fetchOffset}") 
+            print(f"EMPTY IQ, offset={self.fetchOffset}")
             if(0 == (len(self.RS_ALUIs.q)+len(self.RS_ALUFPs.q)+len(self.RS_MULTFPs.q)+len(self.LDSTQ.q))):
                 self.done = True # If all reservation stations are empty, we are done
             return
@@ -296,11 +296,13 @@ class Tomasulo:
 
             # Check that the relevant RS is not full
             # Fetch actual instruction
-            if (nextName == "LD" or nextname == "SD"):
+            if (nextName == "LD" or nextName == "SD"):
                 if not self.LDSTQ.isFull():
+                    print("LDSTQ NOT FULL")
                     nextInst = self.IQ.fetch(offset=self.fetchOffset)
                     self.fetchOffset = 0
-                return
+                else:
+                    return
 
             elif (nextName == "ADD.D") or (nextName == "SUB.D"):
                 if not self.RS_ALUFPs.isFull():
@@ -437,7 +439,7 @@ class Tomasulo:
             entry = self.LDSTQ.execute()
             for x in self.LDSTQ.q:
                 if x[5] == False:
-                    byte_addr = x[4] + 4 * self.ARF.get(x[3])
+                    byte_addr = int(x[4])//4 + self.ARF.get(x[3])
                     x[3] = byte_addr
                     x[5] = True
                     break
@@ -568,7 +570,7 @@ class Tomasulo:
                 #check forward, if so subtitute value address of load with the ROB id of store
                 for y in self.LDSTQ.q:
                     if y[1] == 'SD' and y[3] == x[3] and y[5] == True:
-                        x[3] = y[2]    
+                        x[3] = y[2]
                 if isinstance(x[3], int):
                     x[3] = self.memory.mem_read(x[3])
                 x[6] = True
@@ -616,12 +618,11 @@ class Tomasulo:
 
         # Check if a load is ready, if none of the above work
         if winningFU is None:
-            for FU in self.memory:
-                if FU.isResultReady:
-                    temp = FU.getResultID()
-                    if temp < oldestInst:
-                        oldestInst = temp
-                        winningFU = FU
+            if self.memory.isResultReady():
+                temp = self.memory.getResultID()
+                if temp < oldestInst:
+                    oldestInst = temp
+                    winningFU = self.memory
 
         if winningFU is not None:
             # Fetch Result
@@ -634,12 +635,10 @@ class Tomasulo:
 
             print(f"ROB Destination: {name}")
 
-
             # Update Reservation Stations
             self.RS_ALUIs.update(name, result[1])
             self.RS_ALUFPs.update(name, result[1])
             self.RS_MULTFPs.update(name, result[1])
-            
             self.LDSTQ.update(name, result[1])
 
             # Free old reservation station(just blindly call)
@@ -658,7 +657,7 @@ class Tomasulo:
             # Verify that we didn't write back this cycle
             if not self.isNew(resultID):
                 #Check if store is ready
-                self.memory.checkReady()
+                self.LDSTQ.checkReady()
 
                 print(f"Committing instr. {resultID}")
 

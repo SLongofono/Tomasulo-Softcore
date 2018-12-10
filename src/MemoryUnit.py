@@ -1,5 +1,5 @@
-# @file		 MemoryUnit.py
-# @authors	  Yihao
+# @file         MemoryUnit.py
+# @authors      Yihao
 
 class MemoryUnit:
 	"""
@@ -30,12 +30,6 @@ class MemoryUnit:
 		Getter for the busy status of the Memory
 		"""
 		return self.time < self.nextFreeTime
-
-	def purgeAfterMispredict(self, BID):
-		if self.curInstr != None:
-			if self.curInstr[0] > BID:
-				self.curInstr = None
-				self.nextFreeTime = -1
 
 	def isResultReady(self):
 		'''
