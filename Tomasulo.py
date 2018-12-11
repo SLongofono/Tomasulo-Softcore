@@ -125,6 +125,12 @@ class Tomasulo:
             self.RS_ALUFPs.dump()
             self.RS_MULTFPs.dump()
             self.ROB.dump()
+            self.ARF.dump()
+            self.memory.dump()
+            print(self.output)
+
+            # Allow MMU to do its work
+            self.LDSTQ.checkMMU()
 
             # Try to issue new instructions
             print("ISSUE")
@@ -255,7 +261,6 @@ class Tomasulo:
                 if newLine:
                     outFile.write('\n')
                 newLine = not newLine
-            outFile.write('\n')
 
 
     def isNew(self, ID):
@@ -352,7 +357,6 @@ class Tomasulo:
                     self.fetchOffset = 0
                     print(f"Fetched ALU inst : {nextInst[1][0]}")
                 else:
-                    print("ALUIs are full!")
                     return
 
             print("Next inst: ", nextInst)
@@ -449,10 +453,10 @@ class Tomasulo:
 
         #Compute value in LDSTQ and store the memory address in x[3]
         if not self.LDSTQ.busy():
-            for entry in self.LDSTQ.q:
+            for i, entry in enumerate(self.LDSTQ.q):
                 if not self.isNew(entry[0]):
                     if isinstance(entry[3], int) and not entry[5]:
-                        self.LDSTQ.executeStage(entry[0])
+                        self.LDSTQ.executeStage(i)
                         print("COMPUTED AN ADDRESS FOR INSRUCTION ", entry[0])
                         self.updateOutput(entry[0], 1)
                         break
@@ -698,6 +702,7 @@ class Tomasulo:
 
                             # Update commit cycle
                             self.updateOutput(resultID, 4)
+
                 else:
                     print(f"Committing instr. {resultID}")
 
@@ -707,7 +712,7 @@ class Tomasulo:
                     print("ROB returned: ",result)
 
                     # Check if the RAT should be updated
-                    if(self.RAT.get(result[1]) == result[4]):
+                    if(self.RAT.get(result[1]) == f"ROB{result[4]}"):
                         self.RAT.set(result[1], result[1])
 
                     # Update ARF if this is not a branch
