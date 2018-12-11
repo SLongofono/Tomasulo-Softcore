@@ -51,7 +51,6 @@ Our software hierarchy is depicted below in the UML diagram.  To handle the requ
 - [x] Commit procedure
 
 ## Outstanding Test Cases
-- [ ] Simple ISA test case: Load/Store end-to-end
 - [ ] Addressing corner cases test
 - [ ] Verify memory disambiguation
 - [ ] Complex test case: write patterns to memory

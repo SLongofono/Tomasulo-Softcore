@@ -30,6 +30,9 @@ dot -Tpng classes.dot> documentation/UML/ARF.png
 pyreverse3 src/BranchUnit.py
 dot -Tpng classes.dot> documentation/UML/BranchUnit.png
 
+pyreverse3 src/LdStQ.py
+dot -Tpng classes.dot> documentation/UML/LdStQ.png
+
 pyreverse3 -AS Tomasulo.py
 dot -Tpng classes.dot> documentation/UML/Hierarchy.png
 
