@@ -44,8 +44,13 @@ class Tomasulo:
             # Instantiate Instruction Queue
             self.IQ = InstructionQueue(self.Params["Instructions"])
 
+            # Instantiate Memory
+            self.memory = MemoryUnit(self.Params["LoadStoreUnit"][2])
+            for byteAddress, value in self.Params["MemInitData"]:
+                self.memory.mem_write(byteAddress, value)
+
             #Instantiate Load and Store Queue
-            self.LDSTQ = LdStQ(self.Params["LoadStoreUnit"][0], self.Params["LoadStoreUnit"][1])
+            self.LDSTQ = LdStQ(self.Params["LoadStoreUnit"][0], self.Params["LoadStoreUnit"][1], self.memory)
 
             # Instantiate ROB, RAT, ARF
             self.ROB = ROB(self.Params["ROBEntries"])
@@ -72,12 +77,6 @@ class Tomasulo:
 
             # FP Multipliers
             self.MULTFPs = [FPMultiplier(latency,1,3) for i in range(self.Params["MULTFP"][-1])]
-
-            # Instatiate Memory
-            self.memory = MemoryUnit(self.Params["LoadStoreUnit"][2])
-            for byteAddress, value in self.Params["MemInitData"]:
-                self.memory.mem_write(byteAddress, value)
-            self.memory.dump()
 
             # Instantiate Branch Unit
             self.branch = BranchUnit()
@@ -110,6 +109,7 @@ class Tomasulo:
         Begins the simulation defined by the input file provided at instantiation
         """
         print("Beginning Simulation")
+
 
         while not self.done:
             print(''.ljust(80,'='))
@@ -153,8 +153,8 @@ class Tomasulo:
             # Advance time
             self.advanceTime()
 
-            if(self.done):
-                break
+            self.updateExitConditions()
+
 
         self.writeOutput()
         print("Simulation Complete")
@@ -278,14 +278,23 @@ class Tomasulo:
         return stage == self.cycle
 
 
+    def updateExitConditions(self):
+        """
+        We are done if there are no new instructions and no in-flight
+        instructions
+        """
+        nothingToFetch = self.IQ.empty(offset=self.fetchOffset)
+        stillExecuting = sum([1 for x in self.output.values() if x[4] is None])
+        if nothingToFetch and not stillExecuting:
+            self.done = True
+
+
     def issueStage(self):
         """
         Attempts to issue the next instruction in the Instruction Queue
         """
+
         if self.IQ.empty(offset=self.fetchOffset):
-            print(f"EMPTY IQ, offset={self.fetchOffset}")
-            if(0 == (len(self.RS_ALUIs.q)+len(self.RS_ALUFPs.q)+len(self.RS_MULTFPs.q)+len(self.LDSTQ.q))):
-                self.done = True # If all reservation stations are empty, we are done
             return
 
         if not self.ROB.isFull():
@@ -298,7 +307,6 @@ class Tomasulo:
             # Fetch actual instruction
             if (nextName == "LD" or nextName == "SD"):
                 if not self.LDSTQ.isFull():
-                    print("LDSTQ NOT FULL")
                     nextInst = self.IQ.fetch(offset=self.fetchOffset)
                     self.fetchOffset = 0
                 else:
@@ -355,7 +363,6 @@ class Tomasulo:
             # Prepare an entry for the RS
             entry = [nextInst[0], ROBId, nextInst[1][0], None, None, None, None]
 
-
             # Check if operands are ready now and update
             # Special case for branches:
             if nextName.startswith('B'):
@@ -372,9 +379,16 @@ class Tomasulo:
                     entry[6] = self.ARF.get(operand2)
                 else:
                     entry[4] = map2
-            # TODO CHECK HOW TO DO THIS FOR LD,SD
             elif nextName == 'SD' or nextName == 'LD':
-                self.LDSTQ.add(nextInst[0], nextName, ROBId, nextInst[1][2], nextInst[1][3])
+                # Check if the registers are ready
+                if self.RAT.get(nextInst[1][3]) == nextInst[1][3]:
+                    entry[3] = 4 * int(self.ARF.get(nextInst[1][3]));
+                else:
+                    entry[3] = nextInst[1][3]
+                entry[4] = nextInst[1][2]
+                if nextName == 'SD' and self.RAT.get(nextInst[1][1]) == nextInst[1][1]:
+                    entry[1] = float(self.ARF.get(nextInst[1][1]))
+
             else:
                 # Update operands per the RAT
                 # nextInst  [0, ('ADD', 'R1', 'R2', 'R3')]
@@ -404,11 +418,10 @@ class Tomasulo:
             elif(nextName == "MULT.D"):
                 self.RS_MULTFPs.add(*entry)
             elif(nextName == 'SD' or nextName == 'LD'):
-                pass #TODO check me
+                self.LDSTQ.add(entry[0], entry[2], entry[1], entry[3], entry[4])
+                print("LDSTQ:", self.LDSTQ.q)
             else:
                 self.RS_ALUIs.add(*entry)
-
-            print(nextInst)
 
             # Log the issue in the output dictionary
             self.updateOutput(entry[0], 0)
@@ -436,13 +449,22 @@ class Tomasulo:
 
         #Compute value in LDSTQ and store the memory address in x[3]
         if not self.LDSTQ.busy():
-            entry = self.LDSTQ.execute()
-            for x in self.LDSTQ.q:
-                if x[5] == False:
-                    byte_addr = int(x[4])//4 + self.ARF.get(x[3])
-                    x[3] = byte_addr
-                    x[5] = True
-                    break
+            for entry in self.LDSTQ.q:
+                if not self.isNew(entry[0]):
+                    if isinstance(entry[3], int) and not entry[5]:
+                        self.LDSTQ.executeStage(entry[0])
+                        print("COMPUTED AN ADDRESS FOR INSRUCTION ", entry[0])
+                        self.updateOutput(entry[0], 1)
+                        break
+
+        # Allow stores to proceed by marking them as ready in the ROB if all
+        # the addresses are ready
+        for entry in self.LDSTQ.q:
+            if entry[1]=='SD' and self.LDSTQ.instructionReady(entry):
+                for rb in self.ROB.q:
+                    if rb[0] == entry[0] and not rb[3]:
+                        rb[3] = True
+                        print("MARKED STORE ", entry[0], " AS READY")
 
         # Mark executed instructions for cleanup
         markAsExecuting = []
@@ -529,7 +551,6 @@ class Tomasulo:
                         funcU.purgeAfterMispredict(BID)
 
                     self.LDSTQ.purgeAfterMispredict(BID)
-                    self.memory.purgeAfterMispredict(BID)
 
                     # Clear ROB entries after branch
                     self.ROB.purgeAfterMispredict(BID)
@@ -560,27 +581,19 @@ class Tomasulo:
         """
         Cues the memory module to perform any queued LD instructions and
         update its output buffer
-        1: check if we can send a load to memory (addr and value ready)
-        2: check if we can forward values to loads ( if so, write value, mark as
-        done for writeback stage)
-        3. the memory of store procedure is also here
         """
-        for x in self.LDSTQ.q:
-            if x[1] == 'LD' and x[5] == True and x[6] == False:
-                #check forward, if so subtitute value address of load with the ROB id of store
-                for y in self.LDSTQ.q:
-                    if y[1] == 'SD' and y[3] == x[3] and y[5] == True:
-                        x[3] = y[2]
-                if isinstance(x[3], int):
-                    x[3] = self.memory.mem_read(x[3])
-                x[6] = True
+        # Attempt to forward results and mark output on success
+        ret = self.LDSTQ.doForwards()
+        if ret >= 0:
+            print("ISSUED A LOAD")
+            self.updateOutput(ret,2)
+        else:
+            # Attempt to issue any pending loads and mark output on success
+            ret = self.LDSTQ.issueReadyLoad()
+            if ret >= 0:
+                print("ISSUED A LOAD")
+                self.updateOutput(ret, 2);
 
-        self.LDSTQ.checkReady()
-
-        if not self.memory.busy():
-            if self.LDSTQ.isResultReady():
-                result = self.LDSTQ.getResult()
-                self.memory.execute(result)
 
     def writebackStage(self):
         """
@@ -589,6 +602,9 @@ class Tomasulo:
         Any result written back will update reservations stations and ROB,
         potentially the ARF.
         """
+        # Allow MMU to propagate loads to the internal buffer
+        self.LDSTQ.checkMMU()
+        
         # Check if there are results ready, track the oldest ID seen (the
         # smallest ID number)
         winningFU = None
@@ -618,11 +634,8 @@ class Tomasulo:
 
         # Check if a load is ready, if none of the above work
         if winningFU is None:
-            if self.memory.isResultReady():
-                temp = self.memory.getResultID()
-                if temp < oldestInst:
-                    oldestInst = temp
-                    winningFU = self.memory
+            if self.LDSTQ.isResultReady():
+                winningFU = self.LDSTQ
 
         if winningFU is not None:
             # Fetch Result
@@ -639,6 +652,8 @@ class Tomasulo:
             self.RS_ALUIs.update(name, result[1])
             self.RS_ALUFPs.update(name, result[1])
             self.RS_MULTFPs.update(name, result[1])
+
+            # Update LDSTQ
             self.LDSTQ.update(name, result[1])
 
             # Free old reservation station(just blindly call)
@@ -656,29 +671,54 @@ class Tomasulo:
         if resultID is not None:
             # Verify that we didn't write back this cycle
             if not self.isNew(resultID):
-                #Check if store is ready
-                self.LDSTQ.checkReady()
+                # Check if the ready instruction is a store
+                found = False
+                for entry in self.LDSTQ.q:
+                    if entry[0] == resultID and entry[1] == 'SD':
+                        found = True
+                        break
 
-                print(f"Committing instr. {resultID}")
+                if found:
+                        ss = self.LDSTQ.issueReadyStore()
 
-                # Reference ID, destination, value, doneflag, ROB#
-                result = self.ROB.commit()
+                        if ss >= 0:
+                            print(f"Committing instr. {resultID}")
 
-                print("ROB returned: ",result)
+                            # Reference ID, destination, value, doneflag, ROB#
+                            result = self.ROB.commit()
 
-                # Check if the RAT should be updated
-                if(self.RAT.get(result[1]) == result[4]):
-                    self.RAT.set(result[1], result[1])
+                            print("ROB returned: ",result)
 
-                # Update ARF if this is not a branch
-                if not isinstance(result[2], bool):
-                    self.ARF.set(result[1], result[2])
+                            # Check if the RAT should be updated
+                            if(self.RAT.get(result[1]) == result[4]):
+                                self.RAT.set(result[1], result[1])
 
-                # Retire the instruction
-                self.numRetiredInstructions += 1
+                            # Retire the instruction
+                            self.numRetiredInstructions += 1
 
-                # Update commit cycle
-                self.updateOutput(resultID, 4)
+                            # Update commit cycle
+                            self.updateOutput(resultID, 4)
+                else:
+                    print(f"Committing instr. {resultID}")
+
+                    # Reference ID, destination, value, doneflag, ROB#
+                    result = self.ROB.commit()
+
+                    print("ROB returned: ",result)
+
+                    # Check if the RAT should be updated
+                    if(self.RAT.get(result[1]) == result[4]):
+                        self.RAT.set(result[1], result[1])
+
+                    # Update ARF if this is not a branch
+                    if not isinstance(result[2], bool):
+                        self.ARF.set(result[1], result[2])
+
+                    # Retire the instruction
+                    self.numRetiredInstructions += 1
+
+                    # Update commit cycle
+                    self.updateOutput(resultID, 4)
 # End Class Tomasulo
 
 
