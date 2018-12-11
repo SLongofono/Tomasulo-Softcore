@@ -90,12 +90,6 @@ class Tomasulo:
             # Track PCnext offset to assist with branching
             self.fetchOffset = 0
 
-            # Track if we are stalled for branch misprediction
-            self.branchStalled = False
-
-            # Track mispredicted branch outcomes across ALUIs
-            self.mispredictions = []
-
             # Dumb way to kick out when we are done
             self.done = False
 
@@ -339,16 +333,20 @@ class Tomasulo:
                         nextInst = self.IQ.fetch(offset=self.fetchOffset)
                         predictTaken = self.branch.predict(nextInst[0])
                         if predictTaken:
+                            print("PREDICTING TAKEN, INSTRUCTION ",nextInst[0])
                             # update global fetch offset to branch target
                             self.fetchOffset = int(nextInst[1][3])
                             print(f"BRANCH, updating offset to {self.fetchOffset}")
                             # store PC in case of misprediction
                             self.branch.setMispredictTarget(nextInst[0],self.IQ.next)
                         else:
+                            print("PREDICTING NOT TAKEN, INSTRUCTION ",nextInst[0])
                             self.fetchOffset = 0
                             print(f"BRANCH, updating offset to {self.fetchOffset}")
                             # store target in case of misprediction
                             self.branch.setMispredictTarget(nextInst[0], self.IQ.next + int(nextInst[1][3]))
+                    else:
+                        print("RAT BUFFER FULL!")
                 else:
                     return
             else:
@@ -388,10 +386,13 @@ class Tomasulo:
                 if self.RAT.get(nextInst[1][3]) == nextInst[1][3]:
                     entry[3] = 4 * int(self.ARF.get(nextInst[1][3]));
                 else:
-                    entry[3] = nextInst[1][3]
+                    entry[3] = self.RAT.get(nextInst[1][3])
                 entry[4] = nextInst[1][2]
-                if nextName == 'SD' and self.RAT.get(nextInst[1][1]) == nextInst[1][1]:
-                    entry[1] = float(self.ARF.get(nextInst[1][1]))
+                if nextName == 'SD':
+                    if self.RAT.get(nextInst[1][1]) == nextInst[1][1]:
+                        entry[1] = float(self.ARF.get(nextInst[1][1]))
+                    else:
+                        entry[1] = self.RAT.get(nextInst[1][1])
 
             else:
                 # Update operands per the RAT
@@ -410,9 +411,9 @@ class Tomasulo:
                 else:
                     entry[4] = mapping[3]
 
-            # Update RAT
-            self.RAT.set(nextInst[1][1], ROBId)
-            assert(self.RAT.get(nextInst[1][1]) == ROBId)
+            # Update RAT if not a branch or store
+            if not (nextName.startswith('B') or nextName == 'SD'):
+                self.RAT.set(nextInst[1][1], ROBId)
 
             self.RAT.dump()
 
@@ -460,6 +461,8 @@ class Tomasulo:
                         print("COMPUTED AN ADDRESS FOR INSRUCTION ", entry[0])
                         self.updateOutput(entry[0], 1)
                         break
+        else:
+            print("LDSTQ BUSY")
 
         # Allow stores to proceed by marking them as ready in the ROB if all
         # the addresses are ready
@@ -528,16 +531,21 @@ class Tomasulo:
         """
         for FU in self.ALUIs:
             if FU.isBranchOutcomePending():
+                print("EVALUATING BRANCH OUTCOME")
                 BID, outcome = FU.getResult()
                 prediction = self.branch.predict(BID)
                 if outcome != prediction:
                     # signal branch rollback
-                    self.mispredictions.append(BID)
-                    self.branchStalled = True
                     print(f"BRANCH MISPREDICTION, INSTRUCTION {BID}")
+
+                    print("OLD RAT")
+                    self.RAT.dump()
 
                     # Recover RAT and associated branch instruction ID
                     self.RAT.reg = self.branch.rollBack(BID)
+
+                    print("NEW RAT")
+                    self.RAT.dump()
 
                     # Clear RS for speculative instructions
                     self.RS_ALUIs.purgeAfterMispredict(BID)
@@ -556,8 +564,13 @@ class Tomasulo:
 
                     self.LDSTQ.purgeAfterMispredict(BID)
 
+                    print("CLEARING ROB")
+                    self.ROB.dump()
+
                     # Clear ROB entries after branch
                     self.ROB.purgeAfterMispredict(BID)
+
+                    self.ROB.bump()
 
                     # Update fetch offset and PC per true branch outcome
                     self.IQ.setPC(self.branch.getMispredictTarget(BID))
@@ -608,7 +621,7 @@ class Tomasulo:
         """
         # Allow MMU to propagate loads to the internal buffer
         self.LDSTQ.checkMMU()
-        
+
         # Check if there are results ready, track the oldest ID seen (the
         # smallest ID number)
         winningFU = None
@@ -645,12 +658,11 @@ class Tomasulo:
             # Fetch Result
             result = winningFU.getResult()
 
-            print(f"Writing back {result}")
 
             # Update ROB results
             dest,name = self.ROB.findAndUpdateEntry(*result)
 
-            print(f"ROB Destination: {name}")
+            print(f"Writing back {result} to ROB Destination: {name}")
 
             # Update Reservation Stations
             self.RS_ALUIs.update(name, result[1])
@@ -694,7 +706,7 @@ class Tomasulo:
                             print("ROB returned: ",result)
 
                             # Check if the RAT should be updated
-                            if(self.RAT.get(result[1]) == result[4]):
+                            if(self.RAT.get(result[1]) == f"ROB{result[4]}"):
                                 self.RAT.set(result[1], result[1])
 
                             # Retire the instruction
@@ -717,6 +729,7 @@ class Tomasulo:
 
                     # Update ARF if this is not a branch
                     if not isinstance(result[2], bool):
+                        print(f"SETTING ARF {result[1]} to {result[2]}")
                         self.ARF.set(result[1], result[2])
 
                     # Retire the instruction

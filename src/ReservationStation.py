@@ -115,13 +115,13 @@ class ReservationStation:
         """
         for entry in self.q:
             if entry[TAG_I] == tag:
-                print(f"FOUND TAG {tag}")
+                print(f"INSTR {entry[ID]} FOUND TAG {tag}")
                 entry[TAG_I] = None
                 entry[VALUE_I] = value
             else:
                 print(f"NO MATCH TAG {tag}")
             if entry[TAG_J] == tag:
-                print(f"FOUND TAG {tag}")
+                print(f"INSTR {entry[ID]} FOUND TAG {tag}")
                 entry[TAG_J] = None
                 entry[VALUE_J] = value
             else:
