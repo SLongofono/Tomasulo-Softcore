@@ -110,6 +110,7 @@ class ROB():
         """
         retVal = list(self.q[self.head].copy())
         retVal.append(self.head)
+        print(f"ROB HAS IN COMMIT: {retVal}")
 
         self.head += 1
         if self.head == self.size:

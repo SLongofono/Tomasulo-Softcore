@@ -87,8 +87,12 @@ class LdStQ:
         for entry in self.q:
             if entry[2] == tag:
                 entry[2] = value
+            else:
+                print(f"LDSTQ: {entry[2]} doesnt match {tag}")
             if entry[3] == tag:
                 entry[3] = value
+            else:
+                print(f"LDSTQ: {entry[3]} doesnt match {tag}")
 
 
     def computeAddress(self, instr):

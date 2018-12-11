@@ -81,9 +81,6 @@ class Tomasulo:
             # Instantiate Branch Unit
             self.branch = BranchUnit()
 
-            # Track retired instruction count globally
-            self.numRetiredInstructions = 0
-
             # Track time as cycles
             self.cycle = 0
 
@@ -92,6 +89,10 @@ class Tomasulo:
 
             # Dumb way to kick out when we are done
             self.done = False
+
+            # Track whether we need to save a RAT this round
+            self.saveRAT = False
+            self.RATBID = 0
 
         except FileNotFoundError:
             print("ERROR: Invalid filename, please check the filename and path")
@@ -153,7 +154,13 @@ class Tomasulo:
             # Advance time
             self.advanceTime()
 
+            # Update termination conditions
             self.updateExitConditions()
+
+            # copy RAT if needed
+            if self.saveRAT:
+                self.branch.saveRAT(self.RATBID, self.RAT.getState())
+                self.saveRAT = False
 
 
         self.writeOutput()
@@ -328,25 +335,24 @@ class Tomasulo:
             elif (nextName == "BNE") or (nextName == "BEQ"):
                 if not self.RS_ALUIs.isFull():
                     # Store a copy of the RAT
-                    canProceed = self.branch.saveRAT(self.IQ.peek(offset=self.fetchOffset)[0], self.RAT.getState())
-                    if canProceed:
-                        nextInst = self.IQ.fetch(offset=self.fetchOffset)
-                        predictTaken = self.branch.predict(nextInst[0])
-                        if predictTaken:
-                            print("PREDICTING TAKEN, INSTRUCTION ",nextInst[0])
-                            # update global fetch offset to branch target
-                            self.fetchOffset = int(nextInst[1][3])
-                            print(f"BRANCH, updating offset to {self.fetchOffset}")
-                            # store PC in case of misprediction
-                            self.branch.setMispredictTarget(nextInst[0],self.IQ.next)
-                        else:
-                            print("PREDICTING NOT TAKEN, INSTRUCTION ",nextInst[0])
-                            self.fetchOffset = 0
-                            print(f"BRANCH, updating offset to {self.fetchOffset}")
-                            # store target in case of misprediction
-                            self.branch.setMispredictTarget(nextInst[0], self.IQ.next + int(nextInst[1][3]))
+                    #self.branch.saveRAT(self.IQ.peek(offset=self.fetchOffset)[0], self.RAT.getState())
+                    nextInst = self.IQ.fetch(offset=self.fetchOffset)
+                    self.saveRAT = True
+                    self.RATBID = nextInst[0]
+                    predictTaken = self.branch.predict(nextInst[0])
+                    if predictTaken:
+                        print("PREDICTING TAKEN, INSTRUCTION ",nextInst[0])
+                        # update global fetch offset to branch target
+                        self.fetchOffset = int(nextInst[1][3])
+                        print(f"BRANCH, updating offset to {self.fetchOffset}")
+                        # store PC in case of misprediction
+                        self.branch.setMispredictTarget(nextInst[0],self.IQ.next)
                     else:
-                        print("RAT BUFFER FULL!")
+                        print("PREDICTING NOT TAKEN, INSTRUCTION ",nextInst[0])
+                        self.fetchOffset = 0
+                        print(f"BRANCH, updating offset to {self.fetchOffset}")
+                        # store target in case of misprediction
+                        self.branch.setMispredictTarget(nextInst[0], self.IQ.next + int(nextInst[1][3]))
                 else:
                     return
             else:
@@ -381,6 +387,16 @@ class Tomasulo:
                     entry[6] = self.ARF.get(operand2)
                 else:
                     entry[4] = map2
+                # Check if the instruction just completed and get result
+                if self.ROB.q[self.ROB.head][3]:
+                    if f"ROB{self.ROB.head}" == entry[3]:
+                        entry[3] = None
+                        entry[5] = self.ROB.q[self.ROB.head][2]
+
+                    if f"ROB{self.ROB.head}" == entry[4]:
+                        entry[4] = None
+                        entry[6] = self.ROB.q[self.ROB.head][2]
+
             elif nextName == 'SD' or nextName == 'LD':
                 # Check if the registers are ready
                 if self.RAT.get(nextInst[1][3]) == nextInst[1][3]:
@@ -394,12 +410,23 @@ class Tomasulo:
                     else:
                         entry[1] = self.RAT.get(nextInst[1][1])
 
+                # Check if the instruction just completed and get result
+                if self.ROB.q[self.ROB.head][3]:
+                    if (nextName == 'SD') and (f"ROB{self.ROB.head}" == entry[1]):
+                        entry[1] = float(self.ROB.q[self.ROB.head][2])
+
+                    if f"ROB{self.ROB.head}" == entry[3]:
+                        entry[3] = 4* int(self.ROB.q[self.ROB.head][2])
+
+
             else:
                 # Update operands per the RAT
                 # nextInst  [0, ('ADD', 'R1', 'R2', 'R3')]
                 # Mapping ('ADD', 'R1', 'R2', 'R3')
                 mapping = self.RAT.getMapping(nextInst[1])
+                self.RAT.dump()
                 print("Mapping: ", mapping)
+                print("Instruction: ",nextInst[1])
 
                 if mapping[2] == nextInst[1][2]:
                     entry[5] = self.ARF.get(mapping[2])
@@ -410,6 +437,16 @@ class Tomasulo:
                     entry[6] = self.ARF.get(mapping[3])
                 else:
                     entry[4] = mapping[3]
+                # Check if the instruction just completed and get result
+                if self.ROB.q[self.ROB.head][3]:
+                    if f"ROB{self.ROB.head}" == entry[3]:
+                        entry[3] = None
+                        entry[5] = self.ROB.q[self.ROB.head][2]
+
+                    if f"ROB{self.ROB.head}" == entry[4]:
+                        entry[4] = None
+                        entry[6] = self.ROB.q[self.ROB.head][2]
+
 
             # Update RAT if not a branch or store
             if not (nextName.startswith('B') or nextName == 'SD'):
@@ -461,6 +498,8 @@ class Tomasulo:
                         print("COMPUTED AN ADDRESS FOR INSRUCTION ", entry[0])
                         self.updateOutput(entry[0], 1)
                         break
+                    elif not entry[5]:
+                        print(f"INSTRUCTION NOT READY: {entry}")
         else:
             print("LDSTQ BUSY")
 
@@ -570,7 +609,7 @@ class Tomasulo:
                     # Clear ROB entries after branch
                     self.ROB.purgeAfterMispredict(BID)
 
-                    self.ROB.bump()
+                    self.ROB.dump()
 
                     # Update fetch offset and PC per true branch outcome
                     self.IQ.setPC(self.branch.getMispredictTarget(BID))
@@ -588,6 +627,8 @@ class Tomasulo:
                         del self.output[deadEntry]
                     print("OUTPUT")
                     print(self.output)
+                else:
+                    print(f"PREDICTION {prediction} WAS CORRECT")
 
                 # Since we pulled the result, handle the ROB bookkeeping
                 dest = self.ROB.findAndUpdateEntry(BID, outcome)
@@ -707,10 +748,13 @@ class Tomasulo:
 
                             # Check if the RAT should be updated
                             if(self.RAT.get(result[1]) == f"ROB{result[4]}"):
+                                print(f"SETTING RAT {result[1]} to {result[1]}")
                                 self.RAT.set(result[1], result[1])
+                            else:
+                                 print(f"RAT IS FINE FOR RESULT: {self.RAT.get(result[1])}")
+                                 print(f"RESULT SHOWS ROB{result[4]}")
 
-                            # Retire the instruction
-                            self.numRetiredInstructions += 1
+                            self.RAT.dump()
 
                             # Update commit cycle
                             self.updateOutput(resultID, 4)
@@ -725,18 +769,28 @@ class Tomasulo:
 
                     # Check if the RAT should be updated
                     if(self.RAT.get(result[1]) == f"ROB{result[4]}"):
+                        print(f"SETTING RAT {result[1]} to {result[1]}")
                         self.RAT.set(result[1], result[1])
+                        # Broadcast results again?
+                        #self.RS_ALUIs.update(result[1],result[2])
+                        #self.RS_FPALUs.update(result[1],result[2])
+                        #self.RS_FPMULTs.update(result[1],result[2])
+                        #self.LDSTQ.update(result[1],result[2])
+
+                    else:
+                        print(f"RAT IS FINE FOR RESULT: {self.RAT.get(result[1])}")
+                        print(f"RESULT SHOWS ROB{result[4]}")
 
                     # Update ARF if this is not a branch
                     if not isinstance(result[2], bool):
                         print(f"SETTING ARF {result[1]} to {result[2]}")
                         self.ARF.set(result[1], result[2])
 
-                    # Retire the instruction
-                    self.numRetiredInstructions += 1
+                    self.RAT.dump()
 
                     # Update commit cycle
                     self.updateOutput(resultID, 4)
+
 # End Class Tomasulo
 
 
