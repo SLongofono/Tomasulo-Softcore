@@ -201,7 +201,7 @@ class Tomasulo:
         self.RS_MULTFPs.dump()
         self.ROB.dump()
         self.ARF.dump()
-        self.RAT.dump()
+        #self.RAT.dump()
         self.memory.dump()
         self.IQ.dump()
         self.LDSTQ.dump()
@@ -393,7 +393,10 @@ class Tomasulo:
             elif nextName == 'SD' or nextName == 'LD':
                 # Check if the registers are ready
                 if self.RAT.get(nextInst[1][3]) == nextInst[1][3]:
-                    entry[3] = 4 * int(self.ARF.get(nextInst[1][3]));
+                    entry[3] = int(self.ARF.get(nextInst[1][3]))
+                    #There shouldn't be 4 here, or it will have a bug. e.g. when R1 == 16, then after a cycle it will becomes 64
+                    #However, this will make the Word Address of the last output decrease by 1. I suggest just change the expected
+                    #output and make the Word Address output start from 0
                 else:
                     entry[3] = self.RAT.get(nextInst[1][3])
                 entry[4] = nextInst[1][2]
@@ -417,7 +420,7 @@ class Tomasulo:
                 # nextInst  [0, ('ADD', 'R1', 'R2', 'R3')]
                 # Mapping ('ADD', 'R1', 'R2', 'R3')
                 mapping = self.RAT.getMapping(nextInst[1])
-                self.RAT.dump()
+                #self.RAT.dump()
                 print("Mapping: ", mapping)
                 print("Instruction: ",nextInst[1])
 
@@ -445,7 +448,7 @@ class Tomasulo:
             if not (nextName.startswith('B') or nextName == 'SD'):
                 self.RAT.set(nextInst[1][1], ROBId)
 
-            self.RAT.dump()
+            #self.RAT.dump()
 
             # Add the entry to the RS
             if(nextName == "ADD.D" or nextName == "SUB.D"):
@@ -735,6 +738,14 @@ class Tomasulo:
                             print(f"Committing instr. {resultID}")
 
                             # Reference ID, destination, value, doneflag, ROB#
+                            #Before commit, check Every lables related to the to-be committed rob instruction has been substitued
+                            name = "ROB" + str(self.ROB.q[self.ROB.head][0])
+                            result = self.ROB.q[self.ROB.head][2]
+                            self.RS_ALUIs.update(name, result)
+                            self.RS_ALUFPs.update(name, result)
+                            self.RS_MULTFPs.update(name, result)
+                            self.LDSTQ.update(name, result)
+
                             result = self.ROB.commit()
 
                             print("ROB returned: ",result)
@@ -756,6 +767,14 @@ class Tomasulo:
                     print(f"Committing instr. {resultID}")
 
                     # Reference ID, destination, value, doneflag, ROB#
+                    #Before commit, check Every lables related to the to-be committed rob instruction has been substitued
+                    name = "ROB" + str(self.ROB.q[self.ROB.head][0])
+                    result = self.ROB.q[self.ROB.head][2]
+                    self.RS_ALUIs.update(name, result)
+                    self.RS_ALUFPs.update(name, result)
+                    self.RS_MULTFPs.update(name, result)
+                    self.LDSTQ.update(name, result)
+
                     result = self.ROB.commit()
 
                     print("ROB returned: ",result)

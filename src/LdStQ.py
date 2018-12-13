@@ -130,7 +130,7 @@ class LdStQ:
 
 
     def instructionReady(self, entry):
-        return entry[5] and (entry[1] == 'LD' or isinstance(entry[2], float))
+        return entry[5] and (entry[1] == 'LD' or isinstance(entry[2], float) )
 
 
     def purgeAfterMispredict(self, BID):

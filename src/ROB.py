@@ -40,7 +40,6 @@ class ROB():
         """
         return self.head == self.tail and not self.q[self.head][DONEFLAG]
 
-
     def findAndUpdateEntry(self, entryID, value):
         """
         Searches the ROB entries for the instruction with the given ID, updates
