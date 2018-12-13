@@ -41,13 +41,16 @@ class LdStQ:
         for i, entry in enumerate(self.q):
             if entry[1] == 'LD' and isinstance(entry[3], int): # if the address of this load is known
                 for j in range(i): #find all previous stores
+                    idx = len(self.q) - 1 - j
                     # if the instruction is ready and we have a matching address
-                    if (self.q[j][1] == 'SD') and (self.instructionReady(self.q[j])) and (self.q[j][3] == entry[3]):
+                    if (self.q[idx][1] == 'SD') and (self.instructionReady(self.q[idx])) and (self.q[idx][3] == entry[3]):
                         # get data from the store and put it directly in the
                         # output buffer
-                        self.buffer.append(entry[0], self.q[j][2])
-                        self.q.remove(i)
+                        self.buffer.append(entry[0], self.q[idx][2])
+                        self.q.pop(i)
                         return entry[0]
+                    else:
+                        return -1
         return -1
 
 
@@ -98,7 +101,7 @@ class LdStQ:
     def computeAddress(self, instr):
         for entry in self.q:
             if entry[0] == instr[0]:
-                entry[3] = 4*entry[3] + entry[4]
+                entry[3] = entry[3] + entry[4]
                 entry[5] = True
 
 

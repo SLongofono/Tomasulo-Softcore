@@ -112,17 +112,7 @@ class Tomasulo:
             print(''.rjust(80,'='))
 
             # Log state
-            #self.dump()
-            self.IQ.dump()
-            self.LDSTQ.dump()
-            self.ALUIs[0].dump()
-            self.RS_ALUIs.dump()
-            self.RS_ALUFPs.dump()
-            self.RS_MULTFPs.dump()
-            self.ROB.dump()
-            self.ARF.dump()
-            self.memory.dump()
-            print(self.output)
+            self.dumpAll()
 
             # Allow MMU to do its work
             self.LDSTQ.checkMMU()
@@ -206,13 +196,16 @@ class Tomasulo:
             FU.dump()
         for FU in self.MULTFPs:
             FU.dump()
-
+        self.RS_ALUIs.dump()
+        self.RS_ALUFPs.dump()
+        self.RS_MULTFPs.dump()
         self.ROB.dump()
         self.ARF.dump()
         self.RAT.dump()
         self.memory.dump()
         self.IQ.dump()
         self.LDSTQ.dump()
+        print("\n".join([ f"{k}:{v}" for k,v in self.output.items()]))
 
 
     def writeOutput(self):
